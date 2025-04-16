@@ -12,6 +12,8 @@ import basicSsl from '@vitejs/plugin-basic-ssl'
 // https://vite.dev/config/
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
+  const allowedHosts = env.VUE_APP_ALLOWED_HOSTS ? env.VUE_APP_ALLOWED_HOSTS.split(',') : [];
+
   return {
     plugins: [
       vue({
@@ -37,13 +39,13 @@ export default defineConfig(({ command, mode }) => {
     },
     server: {
       host: "0.0.0.0",
-      allowedHosts: [
-        '.net.ecm',
-        '.updatemirror.cc',
-      ],
+      allowedHosts: allowedHosts,
       https: false,
       port: 8080,
       strictPort: true,
+    },
+    preview: {
+      allowedHosts: allowedHosts
     },
     base: env.VUE_APP_PATH_SUFFIX ? ('/' + env.VUE_APP_PATH_SUFFIX + '/') : undefined,
   }

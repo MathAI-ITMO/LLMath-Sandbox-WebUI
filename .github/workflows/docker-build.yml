@@ -2,7 +2,7 @@ name: Build and Push Docker Image
 
 on:
   push:
-    branches: [ "main", "**" ]  # Trigger on main and all other branches
+    branches: [ "main" ]  # Trigger on main and all other branches
   pull_request:
     branches: [ "main" ]
 
