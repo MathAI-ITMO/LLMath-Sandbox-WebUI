@@ -1,28 +1,16 @@
-FROM node:18-alpine AS builder
+FROM node:lts-alpine
 
 WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm ci
+RUN npm install
 
 COPY . .
 
-RUN npm run build-only
+RUN npm run build
 
-FROM node:18-alpine
-
-WORKDIR /app
-
-COPY --from=builder . .
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/vite.config.ts ./vite.config.ts
-
-RUN ls
+RUN npm install -g serve
 
 EXPOSE 8080
-
-ENV NODE_ENV=production
-
-CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "8080"]
+CMD [ "serve", "-s", "dist" ]
