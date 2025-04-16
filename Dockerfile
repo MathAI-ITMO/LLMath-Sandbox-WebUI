@@ -6,7 +6,7 @@ COPY package*.json ./
 
 RUN npm install
 
-COPY --exclude=.env . .
+COPY . .
 
 RUN ls
 
