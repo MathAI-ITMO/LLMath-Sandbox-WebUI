@@ -68,8 +68,14 @@ export function useAuth() {
   }
 
   async function logout(): Promise<void> {
-    Cookies.remove('.AspNetCore.Identity.Application');
-    isAuthenticatedState.value = false;
+    try {
+      await client.post('/api/Auth/logout', {}, { withCredentials: true });
+    } catch (error) {
+      console.error('Error during logout:', error);
+    } finally {
+      Cookies.remove('.AspNetCore.Identity.Application');
+      isAuthenticatedState.value = false;
+    }
   }
 
   checkAuth();
