@@ -15,26 +15,42 @@ interface RegisterErrorResponse {
   [key: string]: any;
 }
 
+interface RegisterRequestDto {
+  email: string;
+  password: string;
+  inviteCode: string;
+}
+
 const baseUrl = import.meta.env.VITE_MATHLLM_BACKEND_ADDRESS;
 
-// Create a reactive auth state
-const isAuthenticatedState = ref(!!Cookies.get('.AspNetCore.Identity.Application'));
+const isAuthenticatedState = ref(false);
 
 export function useAuth() {
   const client: AxiosInstance = axios.create({
     baseURL: baseUrl,
   });
 
+  async function checkAuth(): Promise<boolean> {
+    try {
+      await client.get('/api/Auth/me', { withCredentials: true });
+      isAuthenticatedState.value = true;
+      return true;
+    } catch (error) {
+      isAuthenticatedState.value = false;
+      return false;
+    }
+  }
+
   async function login(email: string, password: string): Promise<void> {
     const dto: LoginRequestDto = { email, password };
-    await client.post('/login?useCookies=true', dto, { withCredentials: true });
+    await client.post('/api/auth/login', dto, { withCredentials: true });
     isAuthenticatedState.value = true;
   }
 
-  async function register(email: string, password: string): Promise<{ success: boolean; error?: RegisterErrorResponse }> {
+  async function register(email: string, password: string, inviteCode: string): Promise<{ success: boolean; error?: RegisterErrorResponse }> {
     try {
-      const dto: LoginRequestDto = { email, password };
-      await client.post('/register', dto);
+      const dto: RegisterRequestDto = { email, password, inviteCode };
+      await client.post('/api/auth/register', dto);
       await login(email, password);
       return { success: true };
     } catch (error) {
@@ -56,10 +72,13 @@ export function useAuth() {
     isAuthenticatedState.value = false;
   }
 
+  checkAuth();
+
   return {
     login,
     logout,
     register,
+    checkAuth,
     isAuthenticated: isAuthenticatedState
   };
 }

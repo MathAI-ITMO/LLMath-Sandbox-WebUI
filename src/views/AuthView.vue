@@ -37,6 +37,15 @@
               required
             ></v-text-field>
 
+            <v-text-field
+              v-if="!isLogin"
+              v-model="inviteCode"
+              label="Код приглашения"
+              placeholder="Введите код приглашения"
+              :rules="[v => !!v || 'Invite code is required']"
+              required
+            ></v-text-field>
+
             <v-btn
               color="success"
               type="submit"
@@ -82,6 +91,7 @@ const errorMessage: Ref<string> = ref("");
 const email: Ref<string> = ref("");
 const password: Ref<string> = ref("");
 const confirmPassword: Ref<string> = ref("");
+const inviteCode: Ref<string> = ref("");
 const isLogin: Ref<boolean> = ref(true);
 
 function onSubmit() {
@@ -113,7 +123,7 @@ function onRegister() {
     return;
   }
 
-  register(email.value, password.value)
+  register(email.value, password.value, inviteCode.value)
     .then((result) => {
       if (result.success) {
         router.push('/');

@@ -2,11 +2,13 @@
 import { computed } from "vue";
 import { useRoute } from "vue-router";
 import { useAuth } from "./composables/useAuth";
+import { useRoles } from "./composables/useRoles";
 
 const route = useRoute();
 const isChatRoute = computed(() => route.path.startsWith("/chat"));
 
 const { isAuthenticated } = useAuth();
+const { isAdmin } = useRoles();
 </script>
 
 <template>
@@ -22,6 +24,10 @@ const { isAuthenticated } = useAuth();
         <RouterLink v-if="!isAuthenticated" to="/auth">Войти</RouterLink>
         <template v-if="isAuthenticated">
           <RouterLink to="/chat">Чат</RouterLink>
+          <template v-if="isAdmin()">
+            <RouterLink to="/users">Пользователи</RouterLink>
+            <RouterLink to="/invite-codes">Коды приглашений</RouterLink>
+          </template>
           <RouterLink to="/logout">Выйти</RouterLink>
         </template>
       </nav>
