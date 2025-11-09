@@ -5,7 +5,7 @@
         <v-card class="mx-auto pa-6" max-width="600">
           <h1 class="text-h4 mb-6">{{ isLogin ? 'Авторизация' : 'Регистрация' }}</h1>
 
-          <v-form @submit.prevent="onSubmit">
+          <v-form ref="formRef" @submit.prevent="onSubmit">
             <v-text-field
               v-model="email"
               label="Email"
@@ -86,19 +86,24 @@
               variant="text"
               class="mt-2"
               block
-              @click="isLogin = !isLogin"
+              @click="toggleAuthMode"
             >
               {{ isLogin ? 'Создать аккаунт' : 'Уже есть аккаунт? Войти' }}
             </v-btn>
           </v-form>
 
           <v-alert
-            v-if="errorMessage"
+            v-if="errorMessage || errorJson"
             type="error"
             class="mt-4"
             variant="tonal"
           >
-            {{ errorMessage }}
+            <template v-if="errorJson">
+              <pre style="white-space: pre-wrap; word-break: break-word; margin: 0;">{{ errorJson }}</pre>
+            </template>
+            <template v-else>
+              {{ errorMessage }}
+            </template>
           </v-alert>
         </v-card>
       </div>
@@ -107,7 +112,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, type Ref, onMounted } from 'vue';
+import { ref, type Ref, onMounted, watch, nextTick } from 'vue';
 import { useAuth } from '@/composables/useAuth';
 import router from '@/router';
 import { useRoute } from 'vue-router';
@@ -117,6 +122,7 @@ const route = useRoute();
 const { login, register } = useAuth();
 
 const errorMessage: Ref<string> = ref("");
+const errorJson: Ref<string | null> = ref(null);
 const email: Ref<string> = ref("");
 const password: Ref<string> = ref("");
 const confirmPassword: Ref<string> = ref("");
@@ -124,12 +130,31 @@ const firstName: Ref<string> = ref("");
 const lastName: Ref<string> = ref("");
 const studentGroup: Ref<string> = ref("");
 const isLogin: Ref<boolean> = ref(true);
+const formRef = ref();
+
+function clearErrorsAndValidation() {
+  errorMessage.value = "";
+  errorJson.value = null;
+  nextTick(() => {
+    formRef.value?.resetValidation?.();
+  });
+}
+
+function toggleAuthMode() {
+  isLogin.value = !isLogin.value;
+  clearErrorsAndValidation();
+}
 
 onMounted(() => {
   // Проверяем наличие параметра register в URL и переключаемся на форму регистрации
   if (route.query.register === 'true') {
     isLogin.value = false;
   }
+  clearErrorsAndValidation();
+});
+
+watch(isLogin, () => {
+  clearErrorsAndValidation();
 });
 
 function onSubmit() {
@@ -158,6 +183,7 @@ function onAuth() {
 function onRegister() {
   if (password.value !== confirmPassword.value) {
     errorMessage.value = "Пароли не совпадают";
+    errorJson.value = null;
     return;
   }
 
@@ -175,23 +201,31 @@ function onRegister() {
       }
 
       if (result.error) {
+        if (result.error.status === 400) {
+          errorJson.value = JSON.stringify(result.error, null, 2);
+          errorMessage.value = "";
+          return;
+        }
+
         if (result.error.detail) {
-          // Приоритет отображения конкретной ошибки
           errorMessage.value = result.error.detail;
+          errorJson.value = null;
         } else if (result.error.errors) {
-          // Объединяем все сообщения об ошибках
           const errorMessages = Object.values(result.error.errors)
             .flat()
             .join('\n');
           errorMessage.value = errorMessages;
+          errorJson.value = null;
         } else {
           errorMessage.value = "Ошибка при регистрации";
+          errorJson.value = null;
         }
       }
     })
     .catch((err: Error) => {
       console.error("Непредвиденная ошибка:", err);
       errorMessage.value = "Ошибка при регистрации. Проверьте правильность введенных данных.";
+      errorJson.value = null;
     });
 }
 </script>
