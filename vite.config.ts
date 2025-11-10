@@ -36,9 +36,17 @@ export default defineConfig(({ mode }): UserConfig => {
     server: {
       host: "0.0.0.0",
       allowedHosts: true,
-      https: false,
+      https: undefined,
       port: 8080,
       strictPort: true,
+      proxy: {
+        '/api-dotnet': {
+          target: 'http://localhost:5000',
+          changeOrigin: true,
+          secure: false,
+          rewrite: (path) => path.replace(/^\/api-dotnet/, ''),
+        },
+      },
     },
     preview: {
       allowedHosts: true
