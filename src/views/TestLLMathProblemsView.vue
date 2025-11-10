@@ -928,24 +928,14 @@ async function updateProblemFromManagementTab() {
             const typePayload: ProblemWithTypePayload = { problem_id: problemIdToUpdate, type_name: newType };
             await makeApiCall('/assign_type', 'POST', typePayload, 'assignType', 'assignType'); // Можно использовать общий assignType ключ
         }
-        // Удаление старого типа не реализовано через API (только удаление задачи целиком удаляет связи)
       }
-<<<<<<< HEAD
-      
-      // НЕ вызываем fetchAllProblems() и cancelEdit() здесь!
-      // Это делается в handleUpdateProblem() после показа toast
-    } 
-=======
-
-      await fetchAllProblems(); // Обновляем список и карту типов
-      cancelEdit(); // Скрываем форму
     }
->>>>>>> 63c37fe4f122a2e2447d6828ae5aa679871dc53f
   } catch (e) {
     console.error("Ошибка при обновлении задачи (management tab):", e);
     apiResponse.managementUpdateProblem = { error: true, message: "Ошибка парсинга JSON или API (management tab)", details: e };
   }
 }
+
 
 async function makeApiCall(endpoint: string, method: string, body?: any, loadingKey?: keyof typeof apiCallLoading, responseKey?: keyof typeof apiResponse) {
   if (loadingKey) apiCallLoading[loadingKey] = true;
@@ -1124,19 +1114,20 @@ function setProblemToUpdate(problem: Problem) {
   updateProblemData.id = problem._id || problem.id || '';
   updateProblemData.title = problem.title || '';
   updateProblemData.statement = problem.statement;
-  updateProblemData.geolin_ans_key = { ...(problem.geolin_ans_key || {hash:'', seed:0}) };
+  updateProblemData.geolin_ans_key = { ...(problem.geolin_ans_key || { hash: '', seed: 0 }) };
   updateProblemData.result = problem.result || '';
   updateProblemData.solution = { ...(problem.solution || { steps: [] }) };
   updateProblemData.llm_solution = problem.llm_solution !== undefined ? problem.llm_solution : null;
-<<<<<<< HEAD
   updateProblemData.theory_link = problem.theory_link || '';
-  
-=======
 
->>>>>>> 63c37fe4f122a2e2447d6828ae5aa679871dc53f
   updateProblemSolutionStepsJson.value = JSON.stringify(problem.solution?.steps || [], null, 2);
-  updateProblemLlmSolutionJson.value = problem.llm_solution ? (typeof problem.llm_solution === 'string' ? problem.llm_solution : JSON.stringify(problem.llm_solution, null, 2)) : '';
+  updateProblemLlmSolutionJson.value = problem.llm_solution
+    ? (typeof problem.llm_solution === 'string'
+        ? problem.llm_solution
+        : JSON.stringify(problem.llm_solution, null, 2))
+    : '';
 }
+
 
 async function loadProblemForUpdate() {
   if (!updateProblemData.id) return;
@@ -1256,12 +1247,9 @@ async function addProblemFromManagementTab() {
       managementNewProblemSolutionStepsJson.value = '[]';
       managementNewProblemLlmSolutionJson.value = '';
       managementNewProblem.llm_solution = null;
-<<<<<<< HEAD
       managementNewProblem.theory_link = '';
-      managementNewProblemType.value = ''; 
-=======
       managementNewProblemType.value = '';
->>>>>>> 63c37fe4f122a2e2447d6828ae5aa679871dc53f
+
 
     } else {
       console.error("Ошибка при создании задачи (management tab):", createdProblemResponse?.details);
@@ -2506,7 +2494,6 @@ onMounted(() => {
   border-radius: 3px;
   font-family: 'Courier New', monospace;
 }
-<<<<<<< HEAD
 
 /* Modal Form Styles */
 .modal-form {
@@ -2812,6 +2799,4 @@ onMounted(() => {
   display: block;
 }
 </style> 
-=======
-</style>
->>>>>>> 63c37fe4f122a2e2447d6828ae5aa679871dc53f
+
