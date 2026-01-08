@@ -17,34 +17,6 @@ export function useChatView(props: { chatId?: string }, emit: any) {
   const chatId = ref<string | undefined>(props.chatId)
 
   const messagesCard = ref<HTMLElement | null>(null)
-  const chatName = ref<string>('')
-  const chatMode = ref<string>('chat')
-  const selectedProblem = ref<string>('')
-  const selectedProblemHash = ref<string>('')
-  const searchQuery = ref<string>('')
-  const problems = ref<ProblemDto[]>([])
-  const totalProblems = ref<number>(0)
-  const page = ref<number>(1)
-  const itemsPerPage = 10
-  const isLoading = ref<boolean>(false)
-  const isCreatingChat = ref<boolean>(false)
-  const hasDuplicateName = ref<boolean>(false)
-  const needsConfirmation = ref<boolean>(false)
-
-  const pageCount = computed(() => {
-    return Math.ceil(totalProblems.value / itemsPerPage)
-  })
-
-  const isCreateDisabled = computed(() => {
-    if (!chatName.value || (chatMode.value === 'problem-solving' && !selectedProblem.value) || isCreatingChat.value) {
-      return true
-    }
-    if (hasDuplicateName.value && !needsConfirmation.value) {
-      return false
-    }
-    return false
-  })
-
   const sidebarOpen = ref<boolean>(false)
   const chats = ref<Chat[]>([])
 
@@ -139,29 +111,6 @@ export function useChatView(props: { chatId?: string }, emit: any) {
     }
   }
 
-  async function onChatCreate() {
-    try {
-      if (hasDuplicateName.value && !needsConfirmation.value) {
-        needsConfirmation.value = true
-        return
-      }
-
-      isCreatingChat.value = true
-      const dto: CreateChatDto = {
-        name: chatName.value,
-        problemHash: chatMode.value === 'problem-solving' ? selectedProblemHash.value : undefined,
-        type: chatMode.value === 'problem-solving' ? 'ProblemSolver' : 'Chat'
-      }
-      const id = await createChat(dto)
-      emit('chatSelected', id)
-      sidebarOpen.value = false
-
-      await onChatUpdate()
-    } finally {
-      isCreatingChat.value = false
-    }
-  }
-
   async function onChatSelect(id: string) {
     console.log('chat with id ' + id + ' selected')
     emit('chatSelected', id)
@@ -174,7 +123,6 @@ export function useChatView(props: { chatId?: string }, emit: any) {
     try {
       await deleteChat(id)
       if (id === chatId.value) {
-        chatName.value = ''
         chat.value = undefined
         messages.value = []
         chatId.value = undefined
@@ -187,30 +135,33 @@ export function useChatView(props: { chatId?: string }, emit: any) {
     }
   }
 
-  function createNewChat() {
-    chatName.value = ''
-    chat.value = undefined
-    messages.value = []
-    emit('update:chatId', undefined)
-    router.push('/chat')
-    sidebarOpen.value = false
-  }
-
-  async function onSearch() {
-    page.value = 1
-    await fetchProblems()
-  }
-
-  async function fetchProblems() {
+  async function createNewChat() {
     try {
-      isLoading.value = true
-      const response = await getProblems(page.value, searchQuery.value)
-      problems.value = response.problems
-      totalProblems.value = response.number
+      const now = new Date()
+      const year = now.getFullYear()
+      const month = String(now.getMonth() + 1).padStart(2, '0')
+      const day = String(now.getDate()).padStart(2, '0')
+      const hours = String(now.getHours()).padStart(2, '0')
+      const minutes = String(now.getMinutes()).padStart(2, '0')
+
+      const defaultName = `Чат ${year}-${month}-${day} ${hours}:${minutes}`
+
+      const chatName = window.prompt('Введите название чата', defaultName)
+
+      if (chatName === null) {
+        // User cancelled
+        return
+      }
+
+      const dto: CreateChatDto = {
+        name: chatName || defaultName,
+        type: 'Chat'
+      }
+      const newChatId = await createChat(dto)
+      await onChatUpdate()
+      router.push(`/chat/${newChatId}`)
     } catch (error) {
-      console.error('Error fetching problems:', error)
-    } finally {
-      isLoading.value = false
+      console.error('Error creating chat:', error)
     }
   }
 
@@ -280,7 +231,6 @@ export function useChatView(props: { chatId?: string }, emit: any) {
     chatId.value = route.params.chatId as string | undefined;
     emit('update:chatId', chatId.value);
     await onChatUpdate();
-    await fetchProblems();
     await updateTaskInfo();
   })
 
@@ -291,15 +241,6 @@ export function useChatView(props: { chatId?: string }, emit: any) {
     await onChatUpdate();
   })
 
-  watch(page, async () => {
-    await fetchProblems()
-  })
-
-  watch(chatName, () => {
-    hasDuplicateName.value = chats.value.some(chatItem => chatItem.name === chatName.value)
-    needsConfirmation.value = false
-  })
-
   watch(chatId, () => {
     updateTaskInfo();
   });
@@ -307,19 +248,6 @@ export function useChatView(props: { chatId?: string }, emit: any) {
   return {
     chatId,
     messagesCard,
-    chatName,
-    chatMode,
-    selectedProblem,
-    selectedProblemHash,
-    searchQuery,
-    problems,
-    page,
-    isLoading,
-    isCreatingChat,
-    hasDuplicateName,
-    needsConfirmation,
-    pageCount,
-    isCreateDisabled,
     sidebarOpen,
     chats,
     chat,
@@ -333,12 +261,9 @@ export function useChatView(props: { chatId?: string }, emit: any) {
     scrollToBottom,
     onChatUpdate,
     sendMessage,
-    onChatCreate,
     onChatSelect,
     onChatDelete,
     createNewChat,
-    onSearch,
-    fetchProblems,
     updateTaskInfo,
     markTaskSolved,
     UserTaskStatus

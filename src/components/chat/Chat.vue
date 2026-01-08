@@ -6,20 +6,15 @@
       class="chat-sidebar"
     >
       <div class="sidebar-header">
-        <v-divider></v-divider>
-        <v-card-actions class="justify-center pa-4">
-          <v-btn
-            class="new-chat-button"
-            variant="tonal"
-            block
-            :disabled="!chatId"
-            @click="createNewChat()"
-          >
-            <v-icon icon="mdi-plus" class="mr-2" />
-            Новый чат
-          </v-btn>
-        </v-card-actions>
-        <v-divider></v-divider>
+        <v-btn
+          block
+          color="primary"
+          prepend-icon="mdi-plus"
+          @click="createNewChat"
+          class="new-chat-button"
+        >
+          Новый чат
+        </v-btn>
       </div>
 
       <v-list class="chat-list">
@@ -75,7 +70,7 @@
         </v-btn>
 
         <v-app-bar-title class="ml-4">
-          {{ chat?.name || 'Новый чат' }}
+          {{ chat?.name || 'Чат' }}
         </v-app-bar-title>
         <v-spacer></v-spacer>
         <v-btn
@@ -103,144 +98,27 @@
     </div>
 
     <div class="chat-content">
-      <template v-if="!chatId">
-        <v-card class="new-chat-card">
-          <v-card-title class="pb-4">Создание нового чата</v-card-title>
-          <v-radio-group
-            v-model="chatMode"
-            inline
-            density="comfortable"
-            class="mb-4"
-            :disabled="isCreatingChat"
-          >
-            <v-radio
-              label="Чат"
-              value="chat"
-            ></v-radio>
-            <v-radio
-              label="Решение задач"
-              value="problem-solving"
-            ></v-radio>
-          </v-radio-group>
-          <v-row align="center" no-gutters>
-            <v-col>
-              <v-text-field
-                hide-details="auto"
-                label="Название чата"
-                variant="solo"
-                density="comfortable"
-                bg-color="surface"
-                v-model="chatName"
-                class="chat-input"
-                :disabled="isCreatingChat"
-                :error="hasDuplicateName"
-              ></v-text-field>
-            </v-col>
-            <v-col cols="auto" class="pl-2">
-              <v-btn
-                variant="tonal"
-                :disabled="isCreateDisabled"
-                @click="onChatCreate"
-                class="action-button"
-                :loading="isCreatingChat"
-                :color="needsConfirmation ? 'error' : undefined"
-              >{{ needsConfirmation ? 'Подтвердить' : 'Создать' }}</v-btn>
-            </v-col>
-          </v-row>
-          <v-alert
-            v-if="hasDuplicateName && needsConfirmation"
-            type="error"
-            density="compact"
-            class="mt-2"
-            variant="tonal"
-          >
-            Чат с таким именем существует. Нажмите "Подтвердить" для подтверждения.
-          </v-alert>
-          <template v-if="chatMode === 'problem-solving'">
-            <v-row align="center" no-gutters class="mt-4">
-              <v-col>
-                <v-text-field
-                  v-model="searchQuery"
-                  label="Поиск задач"
-                  variant="solo"
-                  density="comfortable"
-                  bg-color="surface"
-                  prepend-inner-icon="mdi-magnify"
-                  clearable
-                  class="chat-input"
-                  hide-details="auto"
-                  @keyup.enter="onSearch"
-                  :disabled="isCreatingChat"
-                ></v-text-field>
-              </v-col>
-              <v-col cols="auto" class="pl-2">
-                <v-btn
-                  variant="tonal"
-                  @click="onSearch"
-                  class="action-button"
-                  :loading="isLoading"
-                  :disabled="isCreatingChat"
-                >Поиск</v-btn>
-              </v-col>
-            </v-row>
-            <v-card class="mt-4 problems-card">
-              <v-list lines="one" class="problems-list">
-                <template v-if="isLoading">
-                  <v-list-item v-for="n in 5" :key="n">
-                    <v-skeleton-loader type="list-item"></v-skeleton-loader>
-                  </v-list-item>
-                </template>
-                <template v-else>
-                  <v-list-item
-                    v-for="problem in problems"
-                    :key="problem.hash"
-                    :value="problem.name"
-                    @click="() => {
-                      selectedProblem = problem.name;
-                      selectedProblemHash = problem.hash;
-                    }"
-                    :active="selectedProblem === problem.name"
-                    class="problem-item"
-                    :disabled="isCreatingChat"
-                  >
-                    <v-list-item-title>{{ problem.name }}</v-list-item-title>
-                  </v-list-item>
-                </template>
-              </v-list>
-              <v-card-actions class="justify-center pa-2">
-                <v-pagination
-                  v-model="page"
-                  :length="pageCount"
-                  :total-visible="5"
-                  density="comfortable"
-                  :disabled="isLoading || isCreatingChat"
-                ></v-pagination>
-              </v-card-actions>
-            </v-card>
-          </template>
-        </v-card>
-      </template>
-      <template v-else>
+      <template v-if="chatId">
         <div ref="messagesCard" class="messages-wrapper">
           <div class="messages-container">
 
-			<div class="messages-list">
-			  <!-- блок 'пока нет сообщений' -->
-			  <template v-if="messages.length === 0">
-				<div class="no-messages">
-				  <div class="text-center">
-					Сообщений пока нет, напишите первое сообщение
-				  </div>
-				</div>
-			  </template>
+            <div class="messages-list">
+              <!-- блок 'пока нет сообщений' -->
+              <template v-if="messages.length === 0">
+                <div class="no-messages">
+                  <div class="text-center">
+                    Сообщений пока нет, напишите первое сообщение
+                  </div>
+                </div>
+              </template>
 
-			  <!-- список сообщений -->
-			  <message-item
-				v-for="m in messages"
-				:key="m.id"
-				:message="m"
-			  />
-			</div>
+              <!-- список сообщений -->
+              <message-item
+                v-for="m in messages"
+                :key="m.id"
+                :message="m"
+              />
+            </div>
 
           </div>
         </div>
@@ -273,6 +151,60 @@
           </div>
         </div>
       </template>
+
+      <template v-else>
+        <div class="no-chat-selected">
+          <v-container class="fill-height">
+            <v-row justify="center" align="center">
+              <v-col cols="12" sm="8" md="6" class="text-center">
+                <v-icon size="64" color="primary" class="mb-4">mdi-chat-processing-outline</v-icon>
+                <h2 class="text-h4 mb-4">Выберите чат для начала общения</h2>
+                <p class="text-body-1 mb-6 text-medium-emphasis">
+                  Выберите существующий чат из списка ниже или создайте новый, чтобы начать обсуждение математических задач.
+                </p>
+
+                <v-card variant="outlined" class="pa-0 mb-6 chat-list-card">
+                  <v-list class="text-left py-0">
+                    <v-list-subheader>Ваши чаты</v-list-subheader>
+                    <v-divider></v-divider>
+                    <template v-if="chats.length > 0">
+                      <v-list-item
+                        v-for="chatItem in chats"
+                        :key="chatItem.id"
+                        link
+                        @click="onChatSelect(chatItem.id)"
+                        class="chat-list-item-main"
+                      >
+                        <template v-slot:prepend>
+                          <v-icon :icon="chatItem.type === 'ProblemSolver' ? 'mdi-function' : 'mdi-chat'" class="mr-2"></v-icon>
+                        </template>
+                        <v-list-item-title>{{ chatItem.name }}</v-list-item-title>
+                        <template v-slot:append>
+                          <v-icon size="small">mdi-chevron-right</v-icon>
+                        </template>
+                      </v-list-item>
+                    </template>
+                    <v-list-item v-else>
+                      <v-list-item-title class="text-center py-4 text-medium-emphasis">
+                        У вас пока нет чатов
+                      </v-list-item-title>
+                    </v-list-item>
+                  </v-list>
+                </v-card>
+
+                <v-btn
+                  color="primary"
+                  size="large"
+                  prepend-icon="mdi-plus"
+                  @click="createNewChat"
+                >
+                  Создать новый чат
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-container>
+        </div>
+      </template>
     </div>
   </div>
 </template>
@@ -294,19 +226,6 @@ const props = defineProps({
 const {
   chatId,
   messagesCard,
-  chatName,
-  chatMode,
-  selectedProblem,
-  selectedProblemHash,
-  searchQuery,
-  problems,
-  page,
-  isLoading,
-  isCreatingChat,
-  hasDuplicateName,
-  needsConfirmation,
-  pageCount,
-  isCreateDisabled,
   sidebarOpen,
   chats,
   chat,
@@ -318,11 +237,9 @@ const {
   taskType,
   markingSolved,
   sendMessage,
-  onChatCreate,
   onChatSelect,
   onChatDelete,
   createNewChat,
-  onSearch,
   markTaskSolved,
   UserTaskStatus
 } = useChatView(props, emit)
@@ -466,16 +383,24 @@ const {
   opacity: 1 !important;
 }
 
-.new-chat-card {
-  width: 90%;
-  max-width: 75rem;
-  margin: 2rem auto;
-  padding: 1rem;
-  border-radius: 1rem;
+.no-chat-selected {
+  height: 100%;
+  overflow-y: auto;
 }
 
-.margin-before {
-  margin: 0 2rem 1rem 2rem;
+.chat-list-card {
+  border-radius: 1rem !important;
+  background-color: rgba(var(--v-theme-surface), 0.5) !important;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.chat-list-item-main {
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.05);
+}
+
+.chat-list-item-main:last-child {
+  border-bottom: none;
 }
 
 .chat-sidebar {
@@ -485,17 +410,20 @@ const {
 }
 
 .sidebar-header {
-  flex-shrink: 0;
+  padding: 1rem;
+  border-bottom: 1px solid rgba(var(--v-theme-primary), 0.1);
+}
+
+.new-chat-button {
+  text-transform: none;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 .chat-list {
   flex-grow: 1;
   overflow-y: auto;
   overflow-x: hidden;
-}
-
-.new-chat-button {
-  width: 100%;
 }
 
 .chat-list-item {
@@ -519,40 +447,6 @@ const {
 
 .v-list-item--active {
   background-color: rgba(var(--v-theme-primary), 0.15);
-}
-
-.chat-input :deep(.v-field__input) {
-  min-height: 48px !important;
-  padding: 0 1rem;
-}
-
-.chat-input :deep(.v-field) {
-  border-radius: 0.75rem;
-}
-
-.action-button {
-  height: 48px;
-  min-width: 100px;
-}
-
-.problems-card {
-  border-radius: 0.75rem;
-  overflow: hidden;
-}
-
-.problems-list {
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.problem-item {
-  transition: all 0.2s ease;
-  border-radius: 0.5rem;
-  margin: 0.25rem;
-}
-
-.problem-item:hover {
-  background-color: rgba(var(--v-theme-primary), 0.1);
 }
 
 /* Стили для правильного отображения матриц KaTeX */
