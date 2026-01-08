@@ -38,6 +38,5 @@ const { isAuthenticated } = useAuth();
 
 .content {
   flex: 1;
-  padding: 1rem;
 }
 </style>

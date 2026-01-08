@@ -8,6 +8,7 @@ import TestLLMathProblemsView from '@/views/TestLLMathProblemsView.vue'
 import StatisticsView from '@/views/StatisticsView.vue'
 import UserDetailView from '@/views/UserDetailView.vue'
 import AdminChatView from '@/views/AdminChatView.vue'
+import VideoAppView from '@/views/VideoAppView.vue'
 import { useAuth } from '@/composables/useAuth'
 
 const router = createRouter({
@@ -60,6 +61,11 @@ const router = createRouter({
       path: '/statistics/:userId',
       name: 'user-details',
       component: UserDetailView,
+    },
+    {
+      path: '/video-app',
+      name: 'video-app',
+      component: VideoAppView,
     },
   ],
 })

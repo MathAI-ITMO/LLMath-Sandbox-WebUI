@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import VideoLecturesSection from './VideoLecturesSection.vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { onMounted, ref, computed } from 'vue'
@@ -104,13 +105,11 @@ const fullName = computed(() => {
           </div>
         </v-card>
       </div>
-
       <v-card-text class="text-body-1 mt-6 mb-0">
         <p class="mb-4 text-h6">Выберите режим работы:</p>
       </v-card-text>
-
       <!-- Карточное представление режимов обучения -->
-      <v-row class="px-4">
+      <v-row class="px-4 mt-6">
         <v-col cols="12" sm="4">
           <v-card class="mode-card" height="100%" elevation="3" @click="router.push('/select-task?taskType=1')">
             <v-card-item>
@@ -163,9 +162,11 @@ const fullName = computed(() => {
         </v-col>
       </v-row>
 
+      <!-- Блок с видеолекциями -->
+      <VideoLecturesSection />
+
       <v-card-text class="mt-4">
         <p class="my-4 text-h6">Также вы можете перейти в раздел чатов:</p>
-
         <v-card class="question-card mb-4" elevation="2">
           <v-card-item>
             <v-row align="center">
@@ -206,11 +207,10 @@ const fullName = computed(() => {
   padding: 2rem;
   max-width: 1200px;
   margin: 0 auto;
-  max-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 80vh;
+  min-height: 100vh;
 }
 
 .mode-card {

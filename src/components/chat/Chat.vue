@@ -69,6 +69,13 @@
           <v-icon>{{ userTaskId ? 'mdi-view-list' : 'mdi-home' }}</v-icon>
         </v-btn>
 
+        <div v-if="hasTheory" class="header-tabs" ref="tabsRef">
+          <div class="tp-tabs">
+            <button class="tp-tab" :class="{ active: activeTab === 'theory' }" @click="setTab('theory')">теория</button>
+            <button class="tp-tab" :class="{ active: activeTab === 'practice' }" @click="setTab('practice')">практика</button>
+          </div>
+        </div>
+
         <v-app-bar-title class="ml-4">
           {{ chat?.name || 'Чат' }}
         </v-app-bar-title>
@@ -101,7 +108,6 @@
       <template v-if="chatId">
         <div ref="messagesCard" class="messages-wrapper">
           <div class="messages-container">
-
             <div class="messages-list">
               <!-- блок 'пока нет сообщений' -->
               <template v-if="messages.length === 0">
@@ -113,14 +119,34 @@
               </template>
 
               <!-- список сообщений -->
-              <message-item
+              <MessageItem
                 v-for="m in messages"
                 :key="m.id"
                 :message="m"
               />
             </div>
-
           </div>
+        </div>
+
+        <!-- Full-width, full-height overlay from tabs to bottom -->
+        <div
+          v-if="hasTheory"
+          class="theory-overlay"
+          :class="{ open: panelOpen }"
+          :style="{ top: panelTop + 'px', height: 'calc(100dvh - ' + panelTop + 'px)' }"
+        >
+          <!-- collapsed clickable strip -->
+          <div v-if="!panelOpen" class="theory-strip" @click="setTab('theory')"></div>
+          <!-- expanded content: always iframe (no native video substitution) -->
+          <iframe
+            v-show="panelOpen"
+            class="theory-iframe"
+            :src="theoryUrl"
+            title="Theory Video"
+            frameborder="0"
+            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+          ></iframe>
         </div>
 
         <div ref="inputCard" class="input-container">
@@ -217,6 +243,9 @@ defineOptions({
   name: 'ChatMessages'
 })
 
+// Note: controlling playback inside iframe across origins is not reliable,
+// so no autoplay/pause is attempted here.
+
 const emit = defineEmits(['chatSelected', 'chatDeleted', 'update:chatId'])
 
 const props = defineProps({
@@ -243,6 +272,75 @@ const {
   markTaskSolved,
   UserTaskStatus
 } = useChatView(props, emit)
+
+// --- Theory integration (VideoApp) ---
+import { getVideoUrl } from '@/config/services.config'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
+
+// Legacy codai.ru regex for backward compatibility
+const codaiRe = /(?:https?:\/\/)?codai\.ru\/[\w\-\/.%?#=&]+\.mp4\b/i
+const codaiReAll = new RegExp(codaiRe.source, 'gi')
+
+// Get theory URL from chat.theoryLink using VideoApp
+const theoryUrl = computed(() => {
+  // First priority: use theoryLink from chat if available
+  if (chat.value?.theoryLink) {
+    // Convert theory link to VideoApp URL
+    return getVideoUrl(chat.value.theoryLink)
+  }
+
+  // Fallback: extract from messages (for backward compatibility with old codai.ru links)
+  for (const m of messages.value ?? []) {
+    const match = m.text?.match(codaiRe)
+    if (match) {
+      // Extract filename from codai.ru URL and use VideoApp
+      const url = match[0]
+      const filename = url.split('/').pop() || ''
+      return getVideoUrl(filename)
+    }
+  }
+  return ''
+})
+const hasTheory = computed(() => !!theoryUrl.value)
+
+// Tabs state and overlay panel behavior
+const activeTab = ref<'practice' | 'theory'>('practice')
+const panelOpen = computed(() => activeTab.value === 'theory')
+const tabsRef = ref<HTMLElement | null>(null)
+const panelTop = ref(0)
+
+function measurePanelTop() {
+  const el = tabsRef.value
+  if (!el) return
+  const rect = el.getBoundingClientRect()
+  // For position: fixed overlay, top is relative to viewport
+  panelTop.value = Math.max(0, Math.round(rect.top + rect.height))
+}
+
+function setTab(tab: 'practice' | 'theory') {
+  activeTab.value = tab
+}
+
+function onResize() {
+  measurePanelTop()
+}
+
+onMounted(async () => {
+  await nextTick()
+  measurePanelTop()
+  window.addEventListener('resize', onResize)
+  window.addEventListener('scroll', onResize, { passive: true })
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', onResize)
+  window.removeEventListener('scroll', onResize)
+})
+
+watch([hasTheory, () => messages.value?.length, activeTab], async () => {
+  await nextTick()
+  measurePanelTop()
+})
 </script>
 
 <style lang="css" scoped>
@@ -456,5 +554,82 @@ const {
 
 :deep(.katex .base) {
   display: inline-block;
+}
+
+/* ---- Theory integration ---- */
+.tp-tabs {
+  display: inline-flex;
+  gap: 0.75rem; /* larger spacing between buttons */
+  background: rgba(255,255,255,0.06);
+  border-radius: 0.75rem;
+  padding: 0.25rem;
+}
+
+.tp-tab {
+  appearance: none;
+  border: none;
+  padding: 0.35rem 0.9rem;
+  border-radius: 0.6rem;
+  font-size: 0.9rem;
+  color: rgba(var(--v-theme-on-surface), 0.8);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tp-tab.active {
+  background: rgba(var(--v-theme-primary), 0.18);
+  color: rgba(var(--v-theme-on-surface), 0.95);
+}
+
+.header-tabs {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 1rem;
+  margin-right: 1rem;
+}
+
+/* brighter tabs in header */
+.header-tabs .tp-tab {
+  background: rgba(255,255,255,0.12);
+  color: #ffffff;
+  border: none;
+}
+.header-tabs .tp-tab.active {
+  background: rgb(var(--v-theme-primary)); /* like the Send button */
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.theory-overlay {
+  position: fixed;
+  left: 0;
+  top: 0; /* overridden via inline style to var(--v-layout-top) */
+  width: 100vw; /* full width */
+  background: #0f172a; /* dark background under iframe */
+  transform: translateX(calc(-100% + 18px));
+  transition: transform 260ms ease;
+  z-index: 1000; /* above content, below app bars */
+  /* no border on top to avoid any perceived cropping */
+}
+
+.theory-overlay.open {
+  transform: translateX(0);
+}
+
+.theory-strip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 18px; /* 15-20px */
+  background: #ffffff; /* white strip */
+  cursor: pointer;
+}
+
+.theory-iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
 }
 </style>
