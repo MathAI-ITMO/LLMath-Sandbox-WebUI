@@ -12,7 +12,7 @@
           <v-chip v-else-if="chat?.type" size="small" class="ml-2" color="primary" label>{{ chat.type }}</v-chip>
         </v-toolbar-title>
       </v-toolbar>
-      
+
       <div ref="messagesCard" class="messages-container">
         <div class="messages-list">
           <template v-if="messages.length === 0">
@@ -22,7 +22,7 @@
               </div>
             </div>
           </template>
-          
+
           <!-- Используем MessageItem компонент вместо прямого вывода -->
           <MessageItem
             v-for="message in messages"
@@ -84,15 +84,15 @@ watch(() => route.params.chatId, async (newChatId) => {
 
 async function loadChatData() {
   if (!chatId.value) return;
-  
+
   try {
     const receivedChat = await getChatById(chatId.value);
     chat.value = receivedChat;
     console.log('Loaded chat details:', receivedChat);
-    
+
     const receivedMessages = await getChatMessages(chatId.value);
     messages.value = receivedMessages;
-    
+
     scrollToBottom();
   } catch (error) {
     console.error('Error loading chat data:', error);
@@ -228,4 +228,4 @@ const formatTaskTypeForChat = (type: number | undefined): string => {
 :deep(.katex .base) {
   display: inline-block;
 }
-</style> 
+</style>

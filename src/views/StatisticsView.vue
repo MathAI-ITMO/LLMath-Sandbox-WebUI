@@ -31,23 +31,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import axios from 'axios';
+import { useUserStats, type UserStats } from '@/composables/useUserStats';
 
-interface UserStats {
-  userId: string;
-  firstName: string;
-  lastName: string;
-  studentGroup: string;
-  solvedCount: number;
-  inProgressCount: number;
-  normalChatsCount: number;
-}
-
-const stats = ref<UserStats[]>([]);
-const loading = ref(false);
-const error = ref<string | null>(null);
+const { loading, error, groupedStats } = useUserStats();
 
 const headers = [
   { title: 'Имя', key: 'firstName', sortable: true },
@@ -61,17 +48,6 @@ const headers = [
 // Убираем колонку Группа из таблицы, так как будем группировать вручную
 const tableHeaders = headers.filter(h => h.key !== 'studentGroup');
 
-// Группировка по полю studentGroup
-const groupedStats = computed(() => {
-  const arr = Array.isArray(stats.value) ? stats.value : [];
-  return arr.reduce((acc: Record<string, UserStats[]>, stat) => {
-    const group = stat.studentGroup || 'Без группы';
-    if (!acc[group]) acc[group] = [];
-    acc[group].push(stat);
-    return acc;
-  }, {} as Record<string, UserStats[]>);
-});
-
 // Роутер для навигации
 const router = useRouter();
 
@@ -82,25 +58,6 @@ function onRowClick(_event: any, payload: { item: UserStats }) {
     router.push({ name: 'user-details', params: { userId: row.userId } });
   }
 }
-
-// Базовый адрес бэкенда из переменных окружения
-const baseUrl = import.meta.env.VITE_MATHLLM_BACKEND_ADDRESS;
-
-onMounted(async () => {
-  loading.value = true;
-  error.value = null;
-  try {
-    // Запрашиваем статистику у бэкенда
-    const response = await axios.get<UserStats[]>(`${baseUrl}/api/stats/user-stats`, { withCredentials: true });
-    const data = response.data;
-    stats.value = Array.isArray(data) ? data : [];
-  } catch (e: any) {
-    console.error('Error fetching user stats:', e);
-    error.value = e instanceof Error ? e.message : 'Ошибка при загрузке статистики.';
-  } finally {
-    loading.value = false;
-  }
-});
 </script>
 
 <style scoped>
@@ -110,4 +67,4 @@ onMounted(async () => {
   color: rgba(var(--v-theme-on-surface), 0.87) !important;
   font-weight: bold !important;
 }
-</style> 
+</style>

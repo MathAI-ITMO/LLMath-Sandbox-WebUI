@@ -70,8 +70,8 @@
         <div class="form-group">
           <label for="editLlmSolution">Решение LLM (JSON/text):</label>
           <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px;">
-            <button @click="checkSolution('edit')" 
-                    class="small-btn btn-check-solution" 
+            <button @click="checkSolution('edit')"
+                    class="small-btn btn-check-solution"
                     :disabled="apiCallLoading.checkSolution || !currentEditProblem.statement || !currentEditProblemLlmSolutionJson">
               Проверить решение
             </button>
@@ -122,8 +122,8 @@
             <label for="mgmtNewLlmSolution">Решение LLM (опционально, JSON/text):</label>
             <div style="display: flex; gap: 10px;">
               <button @click="getLlmSolution('management')" class="small-btn btn-llm-solution" :disabled="apiCallLoading.getLlmSolution || !managementNewProblem.statement">Получить решение LLM</button>
-              <button @click="checkSolution('management')" 
-                      class="small-btn btn-check-solution" 
+              <button @click="checkSolution('management')"
+                      class="small-btn btn-check-solution"
                       :disabled="apiCallLoading.checkSolution || !managementNewProblem.statement || !managementNewProblemLlmSolutionJson || !managementNewProblem.geolin_ans_key.hash">
                 Проверить решение
               </button>
@@ -234,8 +234,8 @@
             <label for="newLlmSolution">Решение LLM (опционально, JSON/text):</label>
             <div style="display: flex; gap: 10px;">
               <button @click="getLlmSolution('database')" class="small-btn btn-llm-solution" :disabled="apiCallLoading.getLlmSolution || !newProblem.statement">Получить решение LLM</button>
-              <button @click="checkSolution('database')" 
-                      class="small-btn btn-check-solution" 
+              <button @click="checkSolution('database')"
+                      class="small-btn btn-check-solution"
                       :disabled="apiCallLoading.checkSolution || !newProblem.statement || !newProblemLlmSolutionJson || !newProblem.geolin_ans_key.hash">
                 Проверить решение
               </button>
@@ -345,8 +345,8 @@
             <label for="updateLlmSolution">Решение LLM (JSON/text):</label>
             <div style="display: flex; gap: 10px;">
               <button @click="getLlmSolution('update')" class="small-btn btn-llm-solution" :disabled="apiCallLoading.getLlmSolution || !updateProblemData.statement">Получить решение LLM</button>
-              <button @click="checkSolution('update')" 
-                      class="small-btn btn-check-solution" 
+              <button @click="checkSolution('update')"
+                      class="small-btn btn-check-solution"
                       :disabled="apiCallLoading.checkSolution || !updateProblemData.statement || !updateProblemLlmSolutionJson || !updateProblemData.geolin_ans_key.hash">
                 Проверить решение
               </button>
@@ -497,11 +497,11 @@
     </div>
 
     <!-- Модальное окно результатов проверки решения -->
-    <div v-if="checkResultModal.show" class="modal-overlay" @click.self="closeCheckResultModal">
+    <div v-if="isCheckResultModalOpen" class="modal-overlay" @click.self="isCheckResultModalOpen = false">
       <div class="modal-content check-result-modal">
-        <button class="close-button" @click="closeCheckResultModal">×</button>
+        <button class="close-button" @click="isCheckResultModalOpen = false">×</button>
         <h2>Результат проверки решения</h2>
-        
+
         <div class="check-result-section">
           <h3>📝 Проверенное решение:</h3>
           <div class="solution-preview">
@@ -518,14 +518,14 @@
 
         <div class="check-result-section">
           <h3>✅ Результат проверки:</h3>
-          <div class="check-result" :class="{ 'correct': checkResultModal.checkResult?.isCorrect, 'incorrect': !checkResultModal.checkResult?.isCorrect }">
+          <div class="check-result" :class="{ 'correct': checkResultModal.isValid, 'incorrect': !checkResultModal.isValid }">
             <div class="result-status">
-              <span v-if="checkResultModal.checkResult?.isCorrect" class="status-icon">✅</span>
+              <span v-if="checkResultModal.isValid" class="status-icon">✅</span>
               <span v-else class="status-icon">❌</span>
-              <strong>{{ checkResultModal.checkResult?.isCorrect ? 'ПРАВИЛЬНО' : 'НЕПРАВИЛЬНО' }}</strong>
+              <strong>{{ checkResultModal.isValid ? 'ПРАВИЛЬНО' : 'НЕПРАВИЛЬНО' }}</strong>
             </div>
-            <div v-if="checkResultModal.checkResult?.message" class="result-message">
-              {{ checkResultModal.checkResult.message }}
+            <div v-if="checkResultModal.message" class="result-message">
+              {{ checkResultModal.message }}
             </div>
           </div>
         </div>
@@ -547,6 +547,32 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, watch, computed } from 'vue';
 import axios from 'axios';
+import { useProblemManagement } from '@/composables/useProblemManagement';
+import { useGeolinProxy } from '@/composables/useGeolinProxy';
+import { type Problem, type ProblemWithTypePayload, type GeolinProblemData, LLMATH_PROBLEMS_API_URL } from '@/composables/useProblemApi';
+
+const {
+  problems,
+  loading,
+  error,
+  attemptedLoad,
+  problemTypesMap,
+  apiCallLoading,
+  apiResponse,
+  allTypes,
+  fetchAllProblems,
+  fetchAllTypes,
+  getProblemAssignedTypes,
+  deleteProblemByIdAndRefresh,
+  makeApiCall,
+} = useProblemManagement();
+
+const {
+  isCheckResultModalOpen,
+  checkResultModal,
+  loadFromGeolin: loadFromGeolinProxy,
+  checkSolution: checkSolutionProxy,
+} = useGeolinProxy();
 
 const activeTab = ref('management'); // По умолчанию открыта первая вкладка
 
@@ -564,92 +590,10 @@ watch(activeTab, (newTab) => {
   }
 });
 
-const LLMATH_PROBLEMS_API_URL_BASE = 'https://math-llm-problems.dev.mgsds.com';
-const LLMATH_PROBLEMS_API_URL = `${LLMATH_PROBLEMS_API_URL_BASE}/api`;
-const MATHLLM_BACKEND_API_URL = 'https://math-llm-back.dev.mgsds.com'; // URL основного бэкенда
-
-interface GeoilonAnsKey {
-  hash: string;
-  seed: number;
-}
-
-interface Step {
-  order: number;
-  prerequisites?: Record<string, any>;
-  transition?: Record<string, any>;
-  outcomes?: Record<string, any>;
-}
-
-interface Solution {
-  steps: Step[];
-}
-
-interface Problem {
-  _id?: string;
-  id?: string;
-  title?: string;
-  statement: string;
-  geolin_ans_key: GeoilonAnsKey;
-  result?: string;
-  solution: Solution;
-  llm_solution?: any;
-}
-
-interface ProblemWithTypePayload {
-  type_name: string;
-  problem_id: string;
-}
-
-// Интерфейс для ответа от GeoLin прокси
-interface GeolinProblemData {
-  name?: string;
-  hash?: string;
-  condition?: string;
-  seed?: number;
-  error?: string;
-  problemParams?: string; // Добавляем поле для полного объекта problem_params
-}
-
-const problems = ref<Problem[]>([]);
-const loading = ref(false);
-const error = ref<any>(null);
-const attemptedLoad = ref(false);
 const selectedProblem = ref<Problem | null>(null);
-
-const problemTypesMap = ref<Record<string, string[]>>({});
 
 const foundProblemsByTypeList = ref<Problem[]>([]);
 const foundProblemByIdList = ref<Problem[]>([]);
-
-const apiCallLoading = reactive({
-  createProblem: false,
-  fetchProblemById: false,
-  updateProblem: false,
-  deleteProblem: false,
-  assignType: false,
-  fetchProblemsByType: false,
-  fetchAllTypes: false,
-  loadProblemForUpdate: false,
-  managementAddProblem: false,
-  managementUpdateProblem: false,
-  loadFromGeolin: false,
-  getLlmSolution: false,
-  checkSolution: false,
-});
-
-const apiResponse = reactive<Record<string, any>>({
-  createProblem: null,
-  fetchProblemById: null,
-  updateProblem: null,
-  deleteProblem: null,
-  assignType: null,
-  fetchProblemsByType: null,
-  fetchAllTypesError: null,
-  managementAddProblem: null,
-  managementUpdateProblem: null,
-  loadFromGeolin: null,
-  checkSolution: null,
-});
 
 const newProblem = reactive<Omit<Problem, '_id' | 'id'>>({
   title: '',
@@ -693,7 +637,6 @@ const typeAssignment = reactive<ProblemWithTypePayload>({
 });
 const typeToFetchProblemsBy = ref('');
 const allTypes = ref<string[]>([]);
-
 const editingProblem = ref<Problem | null>(null);
 const currentEditProblem = reactive<Omit<Problem, '_id' | 'id' | 'geolin_ans_key' | 'result'>>({
   title: '',
@@ -790,131 +733,6 @@ async function updateProblemFromManagementTab() {
   }
 }
 
-async function makeApiCall(endpoint: string, method: string, body?: any, loadingKey?: keyof typeof apiCallLoading, responseKey?: keyof typeof apiResponse) {
-  if (loadingKey) apiCallLoading[loadingKey] = true;
-  if (responseKey) apiResponse[responseKey] = null;
-  if (responseKey === 'fetchAllTypesError' || loadingKey === 'fetchAllTypes') {
-    apiResponse.fetchAllTypesError = null;
-  }
-
-  try {
-    const options: RequestInit = {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    };
-    if (body && (method === 'POST' || method === 'PUT')) {
-      options.body = JSON.stringify(body);
-    }
-    const response = await fetch(`${LLMATH_PROBLEMS_API_URL}${endpoint}`, options);
-
-    let responseData;
-    const contentType = response.headers.get("content-type");
-    if (contentType && contentType.indexOf("application/json") !== -1) {
-      responseData = await response.json();
-    } else {
-      responseData = await response.text();
-    }
-
-    if (!response.ok) {
-      const errorDetail = typeof responseData === 'object' ? responseData : { message: responseData, status: response.status };
-      throw errorDetail;
-    }
-
-    if (responseKey && responseKey !== 'fetchAllTypesError') {
-      apiResponse[responseKey] = responseData;
-    } else if (endpoint === '/types' && method === 'GET') {
-        allTypes.value = responseData as string[];
-    }
-    return responseData;
-  } catch (e: any) {
-    console.error(`Ошибка при вызове ${method} ${LLMATH_PROBLEMS_API_URL}${endpoint}:`, e);
-    if (responseKey && responseKey !== 'fetchAllTypesError') {
-      apiResponse[responseKey] = { error: true, details: e };
-    } else if (loadingKey === 'fetchAllTypes' || responseKey === 'fetchAllTypesError') {
-        apiResponse.fetchAllTypesError = { error: true, details: e };
-    } else if (endpoint === '/problems' && method === 'GET' && !loadingKey && !responseKey) {
-        error.value = e;
-    }
-    return { error: true, details: e };
-  } finally {
-    if (loadingKey) apiCallLoading[loadingKey] = false;
-  }
-}
-
-async function populateProblemTypesMap() {
-  console.log("Attempting to populate problem types map...");
-  if (!apiCallLoading.fetchAllTypes && allTypes.value.length === 0) {
-      await fetchAllTypes(); // Убедимся, что типы загружены
-  }
-
-  if (allTypes.value && allTypes.value.length > 0 && !apiResponse.fetchAllTypesError) {
-    console.log("Fetched unique types for map:", allTypes.value);
-
-    const tempMap: Record<string, string[]> = {};
-
-    for (const typeStr of allTypes.value) {
-      const problemsForTypeResponse = await makeApiCall(`/get_problems_by_type?problem_type=${encodeURIComponent(typeStr)}`, 'GET');
-
-      if (problemsForTypeResponse && !problemsForTypeResponse.error && Array.isArray(problemsForTypeResponse)) {
-        const problemsWithType: Problem[] = problemsForTypeResponse;
-        for (const problem of problemsWithType) {
-          const problemId = problem._id || problem.id;
-          if (problemId) {
-            if (!tempMap[problemId]) {
-              tempMap[problemId] = [];
-            }
-            if (!tempMap[problemId].includes(typeStr)) {
-              tempMap[problemId].push(typeStr);
-            }
-          }
-        }
-      }
-    }
-    problemTypesMap.value = tempMap;
-    console.log("Problem types map populated:", problemTypesMap.value);
-  } else {
-    console.warn('Could not fetch all types to build problemTypesMap or no types found.', apiResponse.fetchAllTypesError);
-    problemTypesMap.value = {};
-  }
-}
-
-function getProblemAssignedTypes(problemId: string | undefined): string {
-  if (!problemId) return '';
-  return problemTypesMap.value[problemId]?.join(', ') || '';
-}
-
-async function fetchAllProblems() {
-  loading.value = true;
-  error.value = null;
-  attemptedLoad.value = true;
-  foundProblemByIdList.value = [];
-  foundProblemsByTypeList.value = [];
-  apiResponse.fetchProblemById = null;
-  apiResponse.fetchProblemsByType = null;
-
-  try {
-    const response = await fetch(`${LLMATH_PROBLEMS_API_URL}/problems`);
-    if (!response.ok) {
-      const errorData = await response.text();
-      throw new Error(`HTTP error! status: ${response.status}, message: ${errorData}`);
-    }
-    const data = await response.json();
-    problems.value = data;
-    await fetchAllTypes(); // Загружаем типы
-    if (problems.value.length > 0) {
-      await populateProblemTypesMap();
-    } else {
-      problemTypesMap.value = {};
-    }
-  } catch (e) {
-    console.error('Failed to fetch problems:', e);
-    error.value = e;
-  } finally {
-    loading.value = false;
-  }
-}
 
 function tryParseJson(jsonString: string, defaultValue: any = null) {
   if (!jsonString || jsonString.trim() === '') return defaultValue;
@@ -1136,43 +954,19 @@ function closeModal() {
 }
 
 // Функция для вызова GeoLin прокси эндпоинта
-async function fetchFromGeolinProxy(prefix: string) {
-  apiCallLoading.loadFromGeolin = true;
-  apiResponse.loadFromGeolin = null;
-  try {
-    // Запрашиваем задачу со случайным seed, генерируемым на сервере
-    const url = `${MATHLLM_BACKEND_API_URL}/api/v1/geolin-proxy/problem-data?prefix=${encodeURIComponent(prefix)}`;
-    console.log("Запрашиваем задачу со случайным seed");
-
-    const response = await fetch(url);
-    const data = await response.json();
-
-    if (!response.ok) {
-      const errorMsg = data.error || `HTTP error! status: ${response.status}`;
-      console.error("Ошибка от GeoLin API:", data);
-      throw new Error(typeof errorMsg === 'object' ? JSON.stringify(errorMsg) : errorMsg);
-    }
-
-    // Добавляем проверку полученных данных
-    console.log("Получены данные от GeoLin:", data);
-
-    apiResponse.loadFromGeolin = data;
-    return data;
-  } catch (e: any) {
-    console.error("Ошибка при загрузке из GeoLin прокси:", e);
-    apiResponse.loadFromGeolin = { error: e.message || 'Неизвестная ошибка при запросе к GeoLin прокси' };
-    return null;
-  } finally {
-    apiCallLoading.loadFromGeolin = false;
-  }
-}
-
 async function loadFromGeolin() {
   if (!geolinPrefixToLoad.value) {
     apiResponse.loadFromGeolin = { error: "Префикс GeoLin не может быть пустым." };
     return;
   }
-  const data = await fetchFromGeolinProxy(geolinPrefixToLoad.value);
+
+  apiCallLoading.loadFromGeolin = true;
+  apiResponse.loadFromGeolin = null;
+
+  const data = await loadFromGeolinProxy(geolinPrefixToLoad.value);
+
+  apiCallLoading.loadFromGeolin = false;
+
   if (data && !data.error) {
     console.log("Успешно получены данные от GeoLin:", data);
 
@@ -1214,7 +1008,7 @@ async function loadFromGeolin() {
           console.log("В problem_params нет поля seed, устанавливаем значение по умолчанию: 0");
         }
       } catch (e) {
-        console.error("Ошибка при парсинге problem_params:", e, data.problemParams);
+        console.error("Ошибка при парсимге problem_params:", e, data.problemParams);
         managementNewProblem.geolin_ans_key.seed = 0;
         console.log("Невозможно разобрать problem_params, устанавливаем seed=0");
       }
@@ -1230,6 +1024,7 @@ async function loadFromGeolin() {
     managementNewProblem.llm_solution = null;
   } else {
     console.error("Не удалось получить данные из GeoLin:", data?.error || "неизвестная ошибка");
+    apiResponse.loadFromGeolin = { error: data?.error || 'Неизвестная ошибка при запросе к GeoLin прокси' };
   }
 }
 
@@ -1303,7 +1098,7 @@ async function checkSolution(formType: 'management' | 'database' | 'update' | 'e
   let solution = '';
   let hash = '';
   let seed: number | undefined;
-  
+
   if (formType === 'management') {
     problemStatement = managementNewProblem.statement;
     solution = managementNewProblemLlmSolutionJson.value;
@@ -1325,148 +1120,40 @@ async function checkSolution(formType: 'management' | 'database' | 'update' | 'e
     hash = editingProblem.value?.geolin_ans_key?.hash || '';
     seed = editingProblem.value?.geolin_ans_key?.seed;
   }
-  
-  console.log('🔍 CheckSolution - Входные данные:', {
-    formType,
-    problemStatement: problemStatement.substring(0, 200) + '...',
-    solution: solution.substring(0, 200) + '...',
-    hash,
-    seed
-  });
-  
+
   if (!problemStatement) {
     alert('Поле "Условие" не может быть пустым для проверки решения');
     return;
   }
-  
+
   if (!solution) {
     alert('Поле "Решение LLM" не может быть пустым для проверки');
     return;
   }
-  
+
   if (!hash) {
     alert('Hash задачи отсутствует. Невозможно проверить решение.');
     return;
   }
-  
-  apiCallLoading.checkSolution = true;
-  
-  try {
-    const client = axios.create({
-      baseURL: MATHLLM_BACKEND_API_URL,
-      withCredentials: true,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
 
-    // Шаг 1: Извлекаем ответ из решения с помощью LLM
-    const extractRequestData = {
-      problemStatement: problemStatement,
-      solution: solution
-    };
-    
-    console.log('📤 Отправляем запрос на extract-answer:', extractRequestData);
-    
-    const extractResponse = await client.post('/api/v1/llm/extract-answer', extractRequestData);
-    
-    console.log('📥 Ответ от extract-answer:', extractResponse.data);
-    
-    const extractedAnswer = extractResponse.data.extractedAnswer;
-    
-    if (!extractedAnswer) {
-      throw new Error('LLM не смог извлечь ответ из решения - получен пустой ответ');
+  apiCallLoading.checkSolution = true;
+
+  try {
+    const checkResult = await checkSolutionProxy(problemStatement, solution, hash, seed);
+
+    if (checkResult && !checkResult.error) {
+       // Результат уже обработан внутри composable, модалка открыта
+    } else {
+       alert(`Ошибка при проверке решения: ${checkResult?.details?.message || 'неизвестная ошибка'}`);
     }
-    
-    console.log('🎯 Извлеченный ответ:', extractedAnswer);
-    
-    // Шаг 2: Проверяем извлеченный ответ через GeoLin
-    const checkRequestData = {
-      hash: hash,
-      answerAttempt: extractedAnswer,
-      seed: seed
-    };
-    
-    console.log('📤 Отправляем запрос на check-answer-direct:', checkRequestData);
-    
-    const checkResponse = await client.post('/api/v1/geolin-proxy/check-answer-direct', checkRequestData);
-    
-    console.log('📥 Ответ от check-answer-direct:', checkResponse.data);
-    
-    const checkResult = checkResponse.data;
-    
-    // Показываем результат во всплывающем окне
-    showCheckResultModal({
-      problemStatement,
-      solution,
-      extractedAnswer,
-      checkResult,
-      hash,
-      seed
-    });
-    
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Ошибка при проверке решения:', error);
-    
-    if (axios.isAxiosError(error)) {
-      console.error('📋 Детали ошибки axios:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        headers: error.response?.headers,
-        config: {
-          url: error.config?.url,
-          method: error.config?.method,
-          data: error.config?.data
-        }
-      });
-    }
-    
-    let errorMessage = 'Неизвестная ошибка';
-    if (axios.isAxiosError(error)) {
-      errorMessage = error.response?.status === 401 
-        ? 'Ошибка авторизации. Возможно, вам нужно выполнить вход в систему.'
-        : `Ошибка: ${error.response?.status || 'сетевая ошибка'} - ${JSON.stringify(error.response?.data) || error.message}`;
-    } else if (error instanceof Error) {
-      errorMessage = error.message;
-    }
-    alert(`Ошибка при проверке решения: ${errorMessage}`);
+    alert(`Ошибка при проверке решения: ${error.message}`);
   } finally {
     apiCallLoading.checkSolution = false;
   }
 }
 
-// Состояние для модального окна результатов проверки
-const checkResultModal = reactive({
-  show: false,
-  problemStatement: '',
-  solution: '',
-  extractedAnswer: '',
-  checkResult: null as any,
-  hash: '',
-  seed: undefined as number | undefined
-});
-
-function showCheckResultModal(data: {
-  problemStatement: string;
-  solution: string;
-  extractedAnswer: string;
-  checkResult: any;
-  hash: string;
-  seed: number | undefined;
-}) {
-  checkResultModal.show = true;
-  checkResultModal.problemStatement = data.problemStatement;
-  checkResultModal.solution = data.solution;
-  checkResultModal.extractedAnswer = data.extractedAnswer;
-  checkResultModal.checkResult = data.checkResult;
-  checkResultModal.hash = data.hash;
-  checkResultModal.seed = data.seed;
-}
-
-function closeCheckResultModal() {
-  checkResultModal.show = false;
-}
 
 onMounted(() => {
   fetchAllProblems(); // Это также вызовет fetchAllTypes и populateProblemTypesMap
