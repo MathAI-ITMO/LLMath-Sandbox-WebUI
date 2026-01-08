@@ -9,10 +9,10 @@ services:
       ConnectionStrings__Postgres: Host=db;Port=5432;Database=math-llm-backend;Username=postgres;Password=postgres
       OpenAi__ChatModel__Token: ollama
       OpenAi__ChatModel__Url: http://host.docker.internal:11434/v1
-      OpenAi__ChatModel__Model: gemma3:1b
+      OpenAi__ChatModel__Model: gemma3:4b
       OpenAi__SolverModel__Token: ollama
       OpenAi__SolverModel__Url: http://host.docker.internal:11434/v1
-      OpenAi__SolverModel__Model: gemma3:1b
+      OpenAi__SolverModel__Model: gemma3:4b
       GeolinClientOptions__BaseAddress: http://geolin:8080
       ProblemsClientOptions__BaseAddress: http://problems:8000
       CorsConfiguration__Enabled: True
@@ -73,6 +73,65 @@ services:
     ports:
       - 8001:8080
 
+  speaches:
+    image: ghcr.io/speaches-ai/speaches:latest-cpu
+    restart: always
+    ports:
+      - 8003:8000
+    volumes:
+      - hf-hub-cache:/home/ubuntu/.cache/huggingface/hub
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8000/ || curl -f http://localhost:8000/v1/models || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  speaches-init:
+    image: curlimages/curl:latest
+    depends_on:
+      speaches:
+        condition: service_started
+    command: >
+      sh -c "
+      echo 'Waiting for speaches service to be ready...' &&
+      until curl -f http://speaches:8000/ > /dev/null 2>&1; do
+        echo 'Service not ready yet, waiting...' &&
+        sleep 5
+      done &&
+      echo 'Service is ready, running initialization curl...' &&
+      curl 'http://speaches:8000/v1/models/guillaumekln/faster-whisper-tiny' -X POST &&
+      echo 'Initialization complete'
+      "
+    restart: "no"
+
+  video:
+    image: ghcr.io/mathai-itmo/llmath-video:latest
+    restart: always
+    env_file:
+      - .env
+    environment:
+
+      VIDEOAPP_OPENAI_API_KEY: ollama
+      VIDEOAPP_OPENAI_API_BASE: http://host.docker.internal:11434/v1
+      VIDEOAPP_OPENAI_MODEL: gemma3:4b
+
+      VIDEOAPP_OPENAI_STT_API_BASE: http://speaches:8000/v1
+      VIDEOAPP_OPENAI_STT_API_KEY: dummy
+      VIDEOAPP_OPENAI_STT_MODEL: guillaumekln/faster-whisper-tiny
+      VIDEOAPP_WHISPER_LANGUAGE: ru
+
+      FLASK_RUN_HOST: 0.0.0.0
+      FLASK_RUN_PORT: 5001
+      VIDEOAPP_CORS_ORIGINS: http://localhost:8080,http://localhost:3000
+    ports:
+      - 5001:5001
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      speaches:
+        condition: service_started
+
 #  # Поднимаю ollama в compose чтобы проще было без bridge сети, если есть жедлание поднять со своей, то нужно изобретать мосты
 #  ollama:
 #    image: ollama/ollama:latest
@@ -92,3 +151,5 @@ services:
 #
 #volumes:
 #  ollama_data:
+volumes:
+  hf-hub-cache:

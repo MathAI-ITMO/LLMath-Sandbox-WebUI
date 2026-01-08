@@ -594,9 +594,9 @@ watch(activeTab, (newTab) => {
   }
 });
 
-const LLMATH_PROBLEMS_API_URL_BASE = 'https://math-llm-problems.dev.mgsds.com';
+const LLMATH_PROBLEMS_API_URL_BASE = import.meta.env.VITE_LLMATH_PROBLEMS_API_URL;
 const LLMATH_PROBLEMS_API_URL = `${LLMATH_PROBLEMS_API_URL_BASE}/api`;
-const MATHLLM_BACKEND_API_URL = 'https://math-llm-back.dev.mgsds.com'; // URL основного бэкенда
+const MATHLLM_BACKEND_API_URL = import.meta.env.VITE_MATHLLM_BACKEND_ADDRESS; // URL основного бэкенда
 
 interface GeoilonAnsKey {
   hash: string;
