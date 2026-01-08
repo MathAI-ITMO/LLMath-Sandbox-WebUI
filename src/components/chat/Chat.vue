@@ -235,7 +235,7 @@
 			  </template>
 
 			  <!-- список сообщений -->
-			  <MessageItem
+			  <message-item
 				v-for="m in messages"
 				:key="m.id"
 				:message="m"
@@ -278,13 +278,14 @@
 </template>
 
 <script setup lang="ts">
+import MessageItem from '../MessageItem.vue'
+import { useChatView } from '@/composables/useChatView'
+
 defineOptions({
   name: 'ChatMessages'
 })
 
 const emit = defineEmits(['chatSelected', 'chatDeleted', 'update:chatId'])
-
-import { useChatView } from '@/composables/useChatView'
 
 const props = defineProps({
   chatId: String,

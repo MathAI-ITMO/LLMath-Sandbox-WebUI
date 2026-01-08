@@ -42,7 +42,7 @@
             </td>
             <td>
               <button @click="showEditForm(problem)" class="small-btn btn-edit">Изменить</button>
-              <button @click="deleteProblemByIdAndRefresh(problem._id || problem.id)" class="small-btn btn-delete" :disabled="apiCallLoading.deleteProblem">Удалить</button>
+              <button @click="(problem._id || problem.id) && deleteProblemByIdAndRefresh((problem._id || problem.id)!)" class="small-btn btn-delete" :disabled="apiCallLoading.deleteProblem">Удалить</button>
             </td>
           </tr>
         </tbody>
@@ -549,7 +549,7 @@ import { ref, reactive, onMounted, watch, computed } from 'vue';
 import axios from 'axios';
 import { useProblemManagement } from '@/composables/useProblemManagement';
 import { useGeolinProxy } from '@/composables/useGeolinProxy';
-import { type Problem, type ProblemWithTypePayload, type GeolinProblemData, LLMATH_PROBLEMS_API_URL } from '@/composables/useProblemApi';
+import { type Problem, type ProblemWithTypePayload, type GeolinProblemData, LLMATH_PROBLEMS_API_URL, MATHLLM_BACKEND_API_URL } from '@/composables/useProblemApi';
 
 const {
   problems,
@@ -566,6 +566,29 @@ const {
   deleteProblemByIdAndRefresh,
   makeApiCall,
 } = useProblemManagement();
+
+async function populateProblemTypesMapLocal() {
+  if (allTypes.value.length === 0) {
+    await fetchAllTypes();
+  }
+
+  if (allTypes.value.length > 0 && !apiResponse.fetchAllTypesError) {
+    const tempMap: Record<string, string[]> = {};
+    for (const typeStr of allTypes.value) {
+      const problemsForTypeResponse = await makeApiCall(`/get_problems_by_type?problem_type=${encodeURIComponent(typeStr)}`, 'GET');
+      if (problemsForTypeResponse && !problemsForTypeResponse.error && Array.isArray(problemsForTypeResponse)) {
+        for (const problem of problemsForTypeResponse as Problem[]) {
+          const problemId = problem._id || problem.id;
+          if (problemId) {
+            if (!tempMap[problemId]) tempMap[problemId] = [];
+            if (!tempMap[problemId].includes(typeStr)) tempMap[problemId].push(typeStr);
+          }
+        }
+      }
+    }
+    problemTypesMap.value = tempMap;
+  }
+}
 
 const {
   isCheckResultModalOpen,
@@ -636,7 +659,6 @@ const typeAssignment = reactive<ProblemWithTypePayload>({
   problem_id: '',
 });
 const typeToFetchProblemsBy = ref('');
-const allTypes = ref<string[]>([]);
 const editingProblem = ref<Problem | null>(null);
 const currentEditProblem = reactive<Omit<Problem, '_id' | 'id' | 'geolin_ans_key' | 'result'>>({
   title: '',
@@ -849,16 +871,6 @@ async function deleteProblemFromDbTab() {
   problemIdToDeleteValue.value = '';
 }
 
-async function deleteProblemByIdAndRefresh(problemId: string | undefined) {
-  if (!problemId) {
-    console.warn("ID для удаления не предоставлен (management tab)");
-    apiResponse.deleteProblem = { error: true, message: "ID для удаления не предоставлен (management tab)" };
-    return;
-  }
-  await makeApiCall(`/problems/${problemId}`, 'DELETE', undefined, 'deleteProblem', 'deleteProblem');
-  await fetchAllProblems();
-}
-
 async function addProblemFromManagementTab() {
   apiResponse.managementAddProblem = null;
   try {
@@ -927,7 +939,7 @@ async function assignTypeToProblem() {
   if (response && !response.error) {
     typeAssignment.type_name = '';
     typeAssignment.problem_id = '';
-    await populateProblemTypesMap();
+    await populateProblemTypesMapLocal();
   }
 }
 
@@ -939,10 +951,6 @@ async function fetchProblemsByType() {
     foundProblemsByTypeList.value = responseData as Problem[];
     apiResponse.fetchProblemsByType = null;
   }
-}
-
-async function fetchAllTypes() {
- await makeApiCall('/types', 'GET', undefined, 'fetchAllTypes', 'fetchAllTypesError');
 }
 
 function showProblemDetails(problem: Problem) {
@@ -963,7 +971,7 @@ async function loadFromGeolin() {
   apiCallLoading.loadFromGeolin = true;
   apiResponse.loadFromGeolin = null;
 
-  const data = await loadFromGeolinProxy(geolinPrefixToLoad.value);
+  const data = await loadFromGeolinProxy(geolinPrefixToLoad.value) as GeolinProblemData;
 
   apiCallLoading.loadFromGeolin = false;
 

@@ -24,7 +24,7 @@
           </template>
 
           <!-- Используем MessageItem компонент вместо прямого вывода -->
-          <MessageItem
+          <message-item
             v-for="message in messages"
             :key="message.id"
             :message="message"
@@ -37,7 +37,7 @@
 
 <script setup lang="ts">
 import { useAdminChat } from '@/composables/useAdminChat';
-import MessageItem from '@/components/MessageItem.vue';
+import MessageItem from '../components/MessageItem.vue';
 import 'katex/dist/katex.min.css';
 
 const {
