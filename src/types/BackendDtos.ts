@@ -17,6 +17,7 @@ export interface ChatDto {
   name: string;
   type: string;
   taskType?: number;
+  theoryLink?: string;
 }
 
 export interface CreateChatDto {
@@ -43,6 +44,7 @@ export interface ProblemDto {
   name: string;
   description: string;
   condition: string;
+  theoryLink?: string;
 }
 
 export interface ProblemsResponseDto {

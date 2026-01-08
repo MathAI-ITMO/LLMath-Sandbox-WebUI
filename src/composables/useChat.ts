@@ -34,7 +34,7 @@ export function useChat() {
 
   async function getChats(): Promise<Chat[]> {
     const resp = await client.get<ChatDto[]>('/api/chat/get', { withCredentials: true })
-    return resp.data.map((c) => ({ id: c.id, name: c.name, type: c.type }) as Chat)
+    return resp.data.map((c) => ({ id: c.id, name: c.name, type: c.type, theoryLink: c.theoryLink }) as Chat)
   }
 
   async function getChatById(id: string): Promise<Chat | undefined> {
@@ -45,7 +45,8 @@ export function useChat() {
           id: resp.data.id, 
           name: resp.data.name, 
           type: resp.data.type, 
-          taskType: resp.data.taskType
+          taskType: resp.data.taskType,
+          theoryLink: resp.data.theoryLink
         } as Chat;
       }
       return undefined;

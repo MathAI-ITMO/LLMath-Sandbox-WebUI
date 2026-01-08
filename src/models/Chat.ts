@@ -3,4 +3,5 @@ export interface Chat {
   name: string;
   type: 'ProblemSolver' | 'Chat';
   taskType?: number;
+  theoryLink?: string;
 }
