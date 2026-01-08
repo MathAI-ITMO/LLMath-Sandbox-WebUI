@@ -1,8 +1,8 @@
 import { reactive, ref } from 'vue';
 
-export const LLMATH_PROBLEMS_API_URL_BASE = 'https://math-llm-problems.dev.mgsds.com';
+export const LLMATH_PROBLEMS_API_URL_BASE = import.meta.env.VITE_LLMATH_PROBLEMS_API_URL;
 export const LLMATH_PROBLEMS_API_URL = `${LLMATH_PROBLEMS_API_URL_BASE}/api`;
-export const MATHLLM_BACKEND_API_URL = 'https://math-llm-back.dev.mgsds.com';
+export const MATHLLM_BACKEND_API_URL = import.meta.env.VITE_MATHLLM_BACKEND_ADDRESS;
 
 export interface GeoilonAnsKey {
   hash: string;

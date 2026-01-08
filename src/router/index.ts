@@ -66,18 +66,11 @@ const router = createRouter({
 
 const { isAuthenticated, fetchCurrentUser } = useAuth();
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _from, next) => {
   if (to.meta.requiresAuth) {
-    if (isAuthenticated.value) {
-      try {
-        const user = await fetchCurrentUser();
-        if (user) {
-          return next();
-        }
-        return next();
-      } catch {
-        return next();
-      }
+    const user = await fetchCurrentUser();
+    if (user) {
+      return next();
     } else {
       return next({ name: 'home' });
     }

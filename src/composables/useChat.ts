@@ -12,17 +12,18 @@ const baseUrl = import.meta.env.VITE_MATHLLM_BACKEND_ADDRESS
 export function useChat() {
   const client: AxiosInstance = axios.create({
     baseURL: baseUrl,
+    withCredentials: true,
   })
 
   async function createChat(dto: CreateChatDto): Promise<string> {
     console.log(dto)
-    const res = await client.post('/api/chat/create', dto, { withCredentials: true })
+    const res = await client.post('/api/chat/create', dto)
     return res.data.id
   }
 
   async function deleteChat(id: string): Promise<void> {
     try {
-      await client.post(`/api/chat/delete/${id}`, {}, { withCredentials: true })
+      await client.post(`/api/chat/delete/${id}`, {})
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
         return
@@ -33,18 +34,18 @@ export function useChat() {
   }
 
   async function getChats(): Promise<Chat[]> {
-    const resp = await client.get<ChatDto[]>('/api/chat/get', { withCredentials: true })
+    const resp = await client.get<ChatDto[]>('/api/chat/get')
     return resp.data.map((c) => ({ id: c.id, name: c.name, type: c.type }) as Chat)
   }
 
   async function getChatById(id: string): Promise<Chat | undefined> {
     try {
-      const resp = await client.get<ChatDto>(`/api/chat/get/${id}`, { withCredentials: true });
+      const resp = await client.get<ChatDto>(`/api/chat/get/${id}`);
       if (resp.data) {
-        return { 
-          id: resp.data.id, 
-          name: resp.data.name, 
-          type: resp.data.type, 
+        return {
+          id: resp.data.id,
+          name: resp.data.name,
+          type: resp.data.type,
           taskType: resp.data.taskType
         } as Chat;
       }
@@ -57,20 +58,17 @@ export function useChat() {
 
   async function getNextMessage(text: string, chatId: string): Promise<string> {
     const dto: SendMessageRequestDto = { chatId, text }
-    const resp = await client.post<string>('/api/Message/complete', dto, {
-      withCredentials: true,
-    })
-    
+    const resp = await client.post<string>('/api/Message/complete', dto)
+
     // Логируем ответ в консоль для диагностики
     console.log('🔍 LLM Response:', resp.data);
-    
+
     return resp.data
   }
 
   async function getChatMessages(chatId: string): Promise<Message[]> {
     const resp = await client.get<MessageDto[]>(
-      `/api/Message/get-messages-from-chat?chatId=${chatId}`,
-      { withCredentials: true },
+      `/api/Message/get-messages-from-chat?chatId=${chatId}`
     )
     return resp.data.map(
       (m) =>
@@ -91,12 +89,12 @@ export function useChat() {
     if (prefix) {
       params.append('prefix', prefix);
     }
-    const resp = await client.get<ProblemsResponseDto>(`/api/Tasks/problems?${params.toString()}`, { withCredentials: true });
+    const resp = await client.get<ProblemsResponseDto>(`/api/Tasks/problems?${params.toString()}`);
     return resp.data;
   }
 
   async function getProblemByPrefix(prefix: string): Promise<ProblemDto | null> {
-    const resp = await client.get<ProblemsResponseDto>(`/api/Tasks/problems?page=1&size=10&prefixName=${encodeURIComponent(prefix)}`, { withCredentials: true });
+    const resp = await client.get<ProblemsResponseDto>(`/api/Tasks/problems?page=1&size=10&prefixName=${encodeURIComponent(prefix)}`);
     return resp.data.problems.length > 0 ? resp.data.problems[0] : null;
   }
 
@@ -104,33 +102,33 @@ export function useChat() {
     const allProblems: ProblemDto[] = [];
     let page = 1;
     const size = 50; // Берем по 50 задач на странице для оптимизации
-    
+
     while (true) {
       const params = new URLSearchParams({
         page: page.toString(),
         size: size.toString()
       });
-      
+
       if (prefix) {
         params.append('prefixName', prefix);
       }
-      
-      const resp = await client.get<ProblemsResponseDto>(`/api/Tasks/problems?${params.toString()}`, { withCredentials: true });
+
+      const resp = await client.get<ProblemsResponseDto>(`/api/Tasks/problems?${params.toString()}`);
       const problems = resp.data.problems;
-      
+
       if (problems.length === 0) {
         break; // Если задач больше нет, выходим из цикла
       }
-      
+
       allProblems.push(...problems);
-      
+
       if (problems.length < size) {
         break; // Если получили меньше задач, чем размер страницы, значит это последняя страница
       }
-      
+
       page++; // Переходим к следующей странице
     }
-    
+
     return allProblems;
   }
 

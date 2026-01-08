@@ -38,13 +38,11 @@ export function useProblemManagement() {
     error.value = null;
     attemptedLoad.value = true;
     try {
-      const response = await fetch(`${LLMATH_PROBLEMS_API_URL}/problems`);
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorData}`);
+      const data = await makeApiCall('/problems', 'GET');
+      if (data && data.error) {
+        throw new Error(data.message || 'Error fetching problems');
       }
-      const data = await response.json();
-      problems.value = data;
+      problems.value = data || [];
       await fetchAllTypes();
       if (problems.value.length > 0) {
         await populateProblemTypesMap();
