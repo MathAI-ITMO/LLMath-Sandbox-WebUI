@@ -594,9 +594,8 @@ watch(activeTab, (newTab) => {
   }
 });
 
-const LLMATH_PROBLEMS_API_URL_BASE = import.meta.env.VITE_LLMATH_PROBLEMS_API_URL;
-const LLMATH_PROBLEMS_API_URL = `${LLMATH_PROBLEMS_API_URL_BASE}/api`;
-const MATHLLM_BACKEND_API_URL = import.meta.env.VITE_MATHLLM_BACKEND_ADDRESS; // URL основного бэкенда
+const LLMATH_PROBLEMS_API_URL = '/problems/api';
+const MATHLLM_BACKEND_API_URL = '/app'; // Relative path for backend API
 
 interface GeoilonAnsKey {
   hash: string;
@@ -954,7 +953,10 @@ async function makeApiCall(endpoint: string, method: string, body?: any, loading
     if (body && (method === 'POST' || method === 'PUT')) {
       options.body = JSON.stringify(body);
     }
-    const response = await fetch(`${LLMATH_PROBLEMS_API_URL}${endpoint}`, options);
+    const response = await fetch(`${LLMATH_PROBLEMS_API_URL}${endpoint}`, {
+      ...options,
+      credentials: 'include'
+    });
 
     let responseData;
     const contentType = response.headers.get("content-type");
@@ -1042,7 +1044,9 @@ async function fetchAllProblems() {
   apiResponse.fetchProblemsByType = null;
 
   try {
-    const response = await fetch(`${LLMATH_PROBLEMS_API_URL}/problems`);
+    const response = await fetch(`${LLMATH_PROBLEMS_API_URL}/problems`, {
+      credentials: 'include'
+    });
     if (!response.ok) {
       const errorData = await response.text();
       throw new Error(`HTTP error! status: ${response.status}, message: ${errorData}`);
@@ -1302,7 +1306,9 @@ async function fetchFromGeolinProxy(prefix: string) {
     const url = `${MATHLLM_BACKEND_API_URL}/api/v1/geolin-proxy/problem-data?prefix=${encodeURIComponent(prefix)}`;
     console.log("Запрашиваем задачу со случайным seed");
 
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      credentials: 'include'
+    });
     const data = await response.json();
 
     if (!response.ok) {

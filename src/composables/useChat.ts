@@ -7,11 +7,9 @@ interface Stream<T> {
   [Symbol.asyncIterator](): AsyncIterator<T>;
 }
 
-const baseUrl = import.meta.env.VITE_MATHLLM_BACKEND_ADDRESS
-
 export function useChat() {
   const client: AxiosInstance = axios.create({
-    baseURL: baseUrl,
+    baseURL: '/app',
     withCredentials: true,
   })
 

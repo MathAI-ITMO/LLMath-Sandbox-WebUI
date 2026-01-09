@@ -1,11 +1,9 @@
 import axios, { type AxiosInstance } from 'axios';
 import type { UserTaskDto, StartUserTaskRequestDto } from '@/types/BackendDtos';
 
-const baseUrl = import.meta.env.VITE_MATHLLM_BACKEND_ADDRESS;
-
 export function useUserTasks() {
   const client: AxiosInstance = axios.create({
-    baseURL: baseUrl,
+    baseURL: '/app',
   });
 
   /**

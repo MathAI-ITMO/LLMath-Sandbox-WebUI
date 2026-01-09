@@ -57,8 +57,7 @@ export function useAdminChat() {
   onMounted(async () => {
     // Загрузка названий типов задач
     try {
-      const baseUrl = import.meta.env.VITE_MATHLLM_BACKEND_ADDRESS;
-      const titlesResponse = await axios.get<Record<string, string>>(`${baseUrl}/api/stats/task-mode-titles`, { withCredentials: true });
+      const titlesResponse = await axios.get<Record<string, string>>('/app/api/stats/task-mode-titles', { withCredentials: true });
       taskModeTitles.value = titlesResponse.data;
       taskModeTitlesReady.value = true;
       console.log('AdminChatView: Loaded task mode titles:', taskModeTitles.value);

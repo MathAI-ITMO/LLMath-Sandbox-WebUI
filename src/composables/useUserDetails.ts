@@ -39,11 +39,9 @@ export function useUserDetails(userId: string) {
   const userInfo = ref<UserInfo | null>(null);
   const taskModeTitles = ref<Record<string, string>>({});
 
-  const baseUrl = import.meta.env.VITE_MATHLLM_BACKEND_ADDRESS;
-
   async function fetchTaskModeTitles() {
     try {
-      const titlesResponse = await axios.get<Record<string, string>>(`${baseUrl}/api/stats/task-mode-titles`, { withCredentials: true });
+      const titlesResponse = await axios.get<Record<string, string>>('/app/api/stats/task-mode-titles', { withCredentials: true });
       taskModeTitles.value = titlesResponse.data;
     } catch (e) {
       console.error('Failed to load task mode titles:', e);
@@ -52,7 +50,7 @@ export function useUserDetails(userId: string) {
 
   async function fetchUserInfo() {
     try {
-      const statsResp = await axios.get(`${baseUrl}/api/stats/user-stats`, { withCredentials: true });
+      const statsResp = await axios.get('/app/api/stats/user-stats', { withCredentials: true });
       const userDataFromStats = statsResp.data.find((user: any) => user.userId === userId);
 
       if (userDataFromStats) {
@@ -75,7 +73,7 @@ export function useUserDetails(userId: string) {
     loading.value = true;
     error.value = null;
     try {
-      const resp = await axios.get<UserDetailDto>(`${baseUrl}/api/stats/user-details/${userId}`, { withCredentials: true });
+      const resp = await axios.get<UserDetailDto>(`/app/api/stats/user-details/${userId}`, { withCredentials: true });
       details.value = resp.data;
     } catch (e: any) {
       console.error('Error fetching user details:', e);

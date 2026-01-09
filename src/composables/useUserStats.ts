@@ -16,8 +16,6 @@ export function useUserStats() {
   const loading = ref(false);
   const error = ref<string | null>(null);
 
-  const baseUrl = import.meta.env.VITE_MATHLLM_BACKEND_ADDRESS;
-
   const groupedStats = computed(() => {
     const arr = Array.isArray(stats.value) ? stats.value : [];
     return arr.reduce((acc: Record<string, UserStats[]>, stat) => {
@@ -32,7 +30,7 @@ export function useUserStats() {
     loading.value = true;
     error.value = null;
     try {
-      const response = await axios.get<UserStats[]>(`${baseUrl}/api/stats/user-stats`, { withCredentials: true });
+      const response = await axios.get<UserStats[]>('/app/api/stats/user-stats', { withCredentials: true });
       const data = response.data;
       stats.value = Array.isArray(data) ? data : [];
     } catch (e: any) {

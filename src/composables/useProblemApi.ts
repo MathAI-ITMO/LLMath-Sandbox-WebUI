@@ -1,8 +1,6 @@
 import { reactive, ref } from 'vue';
 
-export const LLMATH_PROBLEMS_API_URL_BASE = import.meta.env.VITE_LLMATH_PROBLEMS_API_URL;
-export const LLMATH_PROBLEMS_API_URL = `${LLMATH_PROBLEMS_API_URL_BASE}/api`;
-export const MATHLLM_BACKEND_API_URL = import.meta.env.VITE_MATHLLM_BACKEND_ADDRESS;
+export const LLMATH_PROBLEMS_API_URL = '/problems/api';
 
 export interface GeoilonAnsKey {
   hash: string;
@@ -101,7 +99,10 @@ export function useProblemApi() {
       if (body && (method === 'POST' || method === 'PUT')) {
         options.body = JSON.stringify(body);
       }
-      const response = await fetch(`${LLMATH_PROBLEMS_API_URL}${endpoint}`, options);
+      const response = await fetch(`${LLMATH_PROBLEMS_API_URL}${endpoint}`, {
+        ...options,
+        credentials: 'include'
+      });
 
       let responseData;
       const contentType = response.headers.get("content-type");

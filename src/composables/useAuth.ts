@@ -16,8 +16,6 @@ interface RegisterErrorResponse {
   [key: string]: any;
 }
 
-const baseUrl = import.meta.env.VITE_MATHLLM_BACKEND_ADDRESS;
-
 // Проверяем состояние аутентификации не только по кукам, но и по localStorage
 const checkAuthState = () => {
   const hasCookie = !!Cookies.get('.AspNetCore.Identity.Application');
@@ -33,7 +31,7 @@ const currentUser = shallowRef<UserModel | null>(null);
 
 export function useAuth() {
   const client: AxiosInstance = axios.create({
-    baseURL: baseUrl,
+    baseURL: '/app',
     withCredentials: true // Важно для отправки cookies с запросами
   });
 

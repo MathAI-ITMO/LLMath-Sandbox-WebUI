@@ -1,6 +1,6 @@
 import { ref, reactive } from 'vue';
 import axios from 'axios';
-import { type GeolinProblemData, MATHLLM_BACKEND_API_URL } from './useProblemApi';
+import { type GeolinProblemData } from './useProblemApi';
 
 export function useGeolinProxy() {
   const isCheckResultModalOpen = ref(false);
@@ -17,7 +17,7 @@ export function useGeolinProxy() {
   async function loadFromGeolin(prefix: string) {
     if (!prefix) return { error: true, message: 'Укажите префикс GeoLin' };
     try {
-      const response = await axios.get<GeolinProblemData>(`${MATHLLM_BACKEND_API_URL}/api/v1/geolin-proxy/problem-data`, {
+      const response = await axios.get<GeolinProblemData>('/app/api/v1/geolin-proxy/problem-data', {
         params: { prefix },
         withCredentials: true
       });
@@ -31,7 +31,7 @@ export function useGeolinProxy() {
   async function checkSolution(statement: string, solution: string, hash: string, seed?: number) {
     try {
       const client = axios.create({
-        baseURL: MATHLLM_BACKEND_API_URL,
+        baseURL: '/app',
         withCredentials: true,
         headers: {
           'Content-Type': 'application/json'
