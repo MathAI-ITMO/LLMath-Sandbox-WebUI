@@ -7,11 +7,11 @@
             <h2>{{ title }}</h2>
             <button class="close-btn" @click="$emit('close')" aria-label="Закрыть">×</button>
           </div>
-          
+
           <div class="modal-body">
             <slot></slot>
           </div>
-          
+
           <div class="modal-footer">
             <slot name="footer">
               <button class="btn btn-secondary" @click="$emit('close')">Отмена</button>
@@ -193,7 +193,7 @@ defineEmits<{
     max-height: 100vh;
     border-radius: 0;
   }
-  
+
   .modal-overlay {
     padding: 0;
   }

@@ -27,6 +27,7 @@ export interface Problem {
   result?: string;
   solution: Solution;
   llm_solution?: any;
+  theory_link?: string;
 }
 
 export interface ProblemWithTypePayload {
