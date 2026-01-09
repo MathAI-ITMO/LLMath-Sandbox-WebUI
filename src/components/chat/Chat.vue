@@ -69,12 +69,15 @@
           <v-icon>{{ userTaskId ? 'mdi-view-list' : 'mdi-home' }}</v-icon>
         </v-btn>
 
-        <div v-if="hasTheory" class="header-tabs" ref="tabsRef">
-          <div class="tp-tabs">
-            <button class="tp-tab" :class="{ active: activeTab === 'theory' }" @click="setTab('theory')">теория</button>
-            <button class="tp-tab" :class="{ active: activeTab === 'practice' }" @click="setTab('practice')">практика</button>
-          </div>
-        </div>
+        <v-tabs
+          v-if="hasTheory"
+          v-model="activeTab"
+          color="primary"
+          class="header-tabs"
+        >
+          <v-tab value="theory" @click="setTab('theory')">теория</v-tab>
+          <v-tab value="practice" @click="setTab('practice')">практика</v-tab>
+        </v-tabs>
 
         <v-app-bar-title class="ml-4">
           {{ chat?.name || 'Чат' }}
@@ -150,31 +153,32 @@
         </div>
 
         <div ref="inputCard" class="input-container">
-          <div class="input-panel">
-            <v-text-field
-              hide-details="auto"
-              placeholder="Введите сообщение..."
-              v-model="currentMessageText"
-              auto-grow
-              rows="1"
-              max-rows="1"
-              variant="outlined"
-              density="comfortable"
-              class="message-input"
-              @keyup.enter="sendMessage"
-            ></v-text-field>
-            <v-btn
-              @click="sendMessage"
-              :disabled="isSending"
-              :loading="isSending"
-              color="primary"
-              variant="elevated"
-              class="send-button"
-            >
-              <v-icon icon="mdi-send" class="mr-1"></v-icon>
-              Отправить
-            </v-btn>
-          </div>
+          <v-row no-gutters justify="center">
+            <v-col cols="12" sm="10" md="8" lg="6">
+              <v-text-field
+                hide-details="auto"
+                placeholder="Введите сообщение..."
+                v-model="currentMessageText"
+                variant="outlined"
+                density="comfortable"
+                class="message-input"
+                @keyup.enter="sendMessage"
+              >
+                <template v-slot:append-inner>
+                  <v-btn
+                    @click="sendMessage"
+                    :disabled="isSending"
+                    :loading="isSending"
+                    color="primary"
+                    variant="elevated"
+                    icon="mdi-send"
+                    size="small"
+                  >
+                  </v-btn>
+                </template>
+              </v-text-field>
+            </v-col>
+          </v-row>
         </div>
       </template>
 
@@ -403,34 +407,8 @@ watch([hasTheory, () => messages.value?.length, activeTab], async () => {
   z-index: 10;
 }
 
-.input-panel {
-  width: 90%;
-  max-width: 75rem;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  border-radius: 1.25rem;
-  border: 2px solid rgba(var(--v-theme-primary), 0.7);
-  padding: 0.5rem 0.5rem 0.5rem 1.5rem;
-  background-color: var(--v-theme-background);
-  min-height: 4.25rem;
-}
-
-.input-panel:focus-within {
-  border-color: white;
-}
-
 .message-input {
   flex: 1;
-}
-
-.message-input :deep(.v-field__input) {
-  padding: 0.5rem 0;
-  min-height: 2.75rem;
-}
-
-.message-input :deep(.v-field__outline) {
-  display: none;
 }
 
 .send-button {
@@ -473,7 +451,7 @@ watch([hasTheory, () => messages.value?.length, activeTab], async () => {
 
 .solved-btn {
   background-color: rgb(0 0 0) !important;
-  color: #00ff32 !important;
+  color: #89986D !important;
   font-size: 0.875rem;
   text-transform: none;
   font-weight: 500;
@@ -556,50 +534,6 @@ watch([hasTheory, () => messages.value?.length, activeTab], async () => {
   display: inline-block;
 }
 
-/* ---- Theory integration ---- */
-.tp-tabs {
-  display: inline-flex;
-  gap: 0.75rem; /* larger spacing between buttons */
-  background: rgba(255,255,255,0.06);
-  border-radius: 0.75rem;
-  padding: 0.25rem;
-}
-
-.tp-tab {
-  appearance: none;
-  border: none;
-  padding: 0.35rem 0.9rem;
-  border-radius: 0.6rem;
-  font-size: 0.9rem;
-  color: rgba(var(--v-theme-on-surface), 0.8);
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.tp-tab.active {
-  background: rgba(var(--v-theme-primary), 0.18);
-  color: rgba(var(--v-theme-on-surface), 0.95);
-}
-
-.header-tabs {
-  display: inline-flex;
-  align-items: center;
-  margin-left: 1rem;
-  margin-right: 1rem;
-}
-
-/* brighter tabs in header */
-.header-tabs .tp-tab {
-  background: rgba(255,255,255,0.12);
-  color: #ffffff;
-  border: none;
-}
-.header-tabs .tp-tab.active {
-  background: rgb(var(--v-theme-primary)); /* like the Send button */
-  color: #ffffff;
-  box-shadow: none;
-}
 
 .theory-overlay {
   position: fixed;

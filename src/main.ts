@@ -26,8 +26,18 @@ const vuetify = createVuetify({
   components,
   directives,
   theme: {
-    defaultTheme: 'dark'
-  }
+    defaultTheme: 'dark',
+    themes: {
+      dark: {
+        colors: {
+          primary: '#89986D',
+          secondary: '#81C784',
+          accent: '#89986D',
+          success: '#89986D',
+        },
+      },
+    },
+  },
 })
 
 app.use(vuetify)

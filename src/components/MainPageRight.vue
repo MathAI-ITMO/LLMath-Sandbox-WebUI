@@ -76,26 +76,26 @@ const isAdmin = computed(() => {
       </div>
 
       <div v-else-if="currentUser" class="user-info-container">
-        <v-card class="user-card mx-n6" variant="flat" color="#3e3e3e" rounded="0">
+        <v-card class="user-card mx-n6" variant="flat" color="surface" rounded="0">
           <div class="user-info-content">
             <div class="user-avatar">
               <v-avatar color="primary" size="64">
                 <span class="text-h5 text-white">{{ currentUser.firstName.charAt(0) }}{{ currentUser.lastName.charAt(0) }}</span>
               </v-avatar>
             </div>
-            <div class="user-details">
+            <div class="user-details text-white">
               <h3 class="user-name">{{ fullName }}</h3>
               <div class="user-meta">
                 <div class="user-meta-item">
-                  <v-icon size="small" class="me-1" color="white">mdi-email</v-icon>
+                  <v-icon size="small" class="me-1">mdi-email</v-icon>
                   <span>{{ currentUser.email }}</span>
                 </div>
                 <div class="user-meta-item">
-                  <v-icon size="small" class="me-1" color="white">mdi-account-group</v-icon>
+                  <v-icon size="small" class="me-1">mdi-account-group</v-icon>
                   <span>Группа: {{ currentUser.studentGroup }}</span>
                 </div>
                 <div class="user-meta-item">
-                  <v-icon size="small" class="me-1" color="white">mdi-shield-account</v-icon>
+                  <v-icon size="small" class="me-1">mdi-shield-account</v-icon>
                   <span>Роль: {{ currentUser.role }}</span>
                 </div>
               </div>
