@@ -40,12 +40,8 @@ export function useUserDetails(userId: string) {
   const taskModeTitles = ref<Record<string, string>>({});
 
   async function fetchTaskModeTitles() {
-    try {
-      const titlesResponse = await axios.get<Record<string, string>>('/app/api/stats/task-mode-titles', { withCredentials: true });
-      taskModeTitles.value = titlesResponse.data;
-    } catch (e) {
-      console.error('Failed to load task mode titles:', e);
-    }
+    const titlesResponse = await axios.get<Record<string, string>>('/app/api/stats/task-mode-titles', { withCredentials: true });
+    taskModeTitles.value = titlesResponse.data;
   }
 
   async function fetchUserInfo() {

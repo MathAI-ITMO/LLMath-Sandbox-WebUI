@@ -3,6 +3,7 @@ import VideoLecturesSection from './VideoLecturesSection.vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { onMounted, ref, computed } from 'vue'
+import { USER_ROLES } from '@/config/roles.constants'
 
 const router = useRouter()
 const { isAuthenticated, fetchCurrentUser, currentUser } = useAuth()
@@ -26,6 +27,11 @@ function goToAuth(isRegistration = false) {
 const fullName = computed(() => {
   if (!currentUser.value) return ''
   return `${currentUser.value.firstName} ${currentUser.value.lastName}`
+})
+
+// Проверка, является ли пользователь администратором
+const isAdmin = computed(() => {
+  return currentUser.value?.role === USER_ROLES.ADMIN
 })
 </script>
 
@@ -88,6 +94,10 @@ const fullName = computed(() => {
                   <v-icon size="small" class="me-1" color="white">mdi-account-group</v-icon>
                   <span>Группа: {{ currentUser.studentGroup }}</span>
                 </div>
+                <div class="user-meta-item">
+                  <v-icon size="small" class="me-1" color="white">mdi-shield-account</v-icon>
+                  <span>Роль: {{ currentUser.role }}</span>
+                </div>
               </div>
             </div>
             <div class="logout-btn">
@@ -110,7 +120,7 @@ const fullName = computed(() => {
       </v-card-text>
       <!-- Карточное представление режимов обучения -->
       <v-row class="px-4 mt-6">
-        <v-col cols="12" sm="4">
+        <v-col cols="12" :sm="isAdmin ? 3 : 4">
           <v-card class="mode-card" height="100%" elevation="3" @click="router.push('/select-task?taskType=1')">
             <v-card-item>
               <v-avatar class="mode-icon" color="primary" size="56">
@@ -127,7 +137,7 @@ const fullName = computed(() => {
           </v-card>
         </v-col>
 
-        <v-col cols="12" sm="4">
+        <v-col cols="12" :sm="isAdmin ? 3 : 4">
           <v-card class="mode-card" height="100%" elevation="3" @click="router.push('/select-task?taskType=2')">
             <v-card-item>
               <v-avatar class="mode-icon" color="amber-darken-2" size="56">
@@ -144,7 +154,7 @@ const fullName = computed(() => {
           </v-card>
         </v-col>
 
-        <v-col cols="12" sm="4">
+        <v-col cols="12" :sm="isAdmin ? 3 : 4">
           <v-card class="mode-card" height="100%" elevation="3" @click="router.push('/select-task?taskType=3')">
             <v-card-item>
               <v-avatar class="mode-icon" color="success" size="56">
@@ -157,6 +167,23 @@ const fullName = computed(() => {
             </v-card-text>
             <v-card-actions>
               <v-btn variant="tonal" color="success" block class="white-hover">Перейти</v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-col>
+
+        <v-col v-if="isAdmin" cols="12" sm="3">
+          <v-card class="mode-card" height="100%" elevation="3" @click="router.push('/admin')">
+            <v-card-item>
+              <v-avatar class="mode-icon" color="purple-darken-2" size="56">
+                <v-icon size="x-large" color="white">mdi-shield-crown</v-icon>
+              </v-avatar>
+              <v-card-title class="mt-2">Админ-панель</v-card-title>
+            </v-card-item>
+            <v-card-text>
+              <p>Управление системой: статистика пользователей, управление задачами и настройки.</p>
+            </v-card-text>
+            <v-card-actions>
+              <v-btn variant="tonal" color="purple-darken-2" block class="white-hover">Перейти</v-btn>
             </v-card-actions>
           </v-card>
         </v-col>

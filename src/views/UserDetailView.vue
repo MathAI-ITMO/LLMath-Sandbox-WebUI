@@ -88,7 +88,7 @@ const { details, loading, error, userInfo, formatTaskType } = useUserDetails(use
 
 function goToChat(chatId?: string) {
   console.log('goToChat called with:', chatId);
-  if (chatId) router.push(`/admin-chat/${chatId}`);
+  if (chatId) router.push(`/admin/chat/${chatId}`);
 }
 </script>
 

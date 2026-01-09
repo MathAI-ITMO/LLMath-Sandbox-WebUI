@@ -20,18 +20,14 @@ export function useAdminChat() {
   async function loadChatData() {
     if (!chatId.value) return;
 
-    try {
-      const receivedChat = await getChatById(chatId.value);
-      chat.value = receivedChat;
-      console.log('Loaded chat details:', receivedChat);
+    const receivedChat = await getChatById(chatId.value);
+    chat.value = receivedChat;
+    console.log('Loaded chat details:', receivedChat);
 
-      const receivedMessages = await getChatMessages(chatId.value);
-      messages.value = receivedMessages;
+    const receivedMessages = await getChatMessages(chatId.value);
+    messages.value = receivedMessages;
 
-      scrollToBottom();
-    } catch (error) {
-      console.error('Error loading chat data:', error);
-    }
+    scrollToBottom();
   }
 
   function scrollToBottom() {
@@ -55,15 +51,10 @@ export function useAdminChat() {
   };
 
   onMounted(async () => {
-    // Загрузка названий типов задач
-    try {
-      const titlesResponse = await axios.get<Record<string, string>>('/app/api/stats/task-mode-titles', { withCredentials: true });
-      taskModeTitles.value = titlesResponse.data;
-      taskModeTitlesReady.value = true;
-      console.log('AdminChatView: Loaded task mode titles:', taskModeTitles.value);
-    } catch (e) {
-      console.error('AdminChatView: Failed to load task mode titles:', e);
-    }
+    const titlesResponse = await axios.get<Record<string, string>>('/app/api/stats/task-mode-titles', { withCredentials: true });
+    taskModeTitles.value = titlesResponse.data;
+    taskModeTitlesReady.value = true;
+    console.log('AdminChatView: Loaded task mode titles:', taskModeTitles.value);
 
     chatId.value = route.params.chatId as string;
     if (chatId.value) {

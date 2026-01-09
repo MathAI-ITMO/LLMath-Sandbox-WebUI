@@ -176,16 +176,14 @@ function onRegister() {
 
       if (result.error) {
         if (result.error.detail) {
-          // Приоритет отображения конкретной ошибки
           errorMessage.value = result.error.detail;
         } else if (result.error.errors) {
-          // Объединяем все сообщения об ошибках
           const errorMessages = Object.values(result.error.errors)
             .flat()
             .join('\n');
           errorMessage.value = errorMessages;
         } else {
-          errorMessage.value = "Ошибка при регистрации";
+          errorMessage.value = JSON.stringify(result.error);
         }
       }
     })

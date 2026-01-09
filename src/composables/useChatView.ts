@@ -103,9 +103,6 @@ export function useChatView(props: { chatId?: string }, emit: any) {
 
       messages.value.push(message)
       scrollToBottom()
-    } catch (error) {
-      console.error('Error sending message:', error);
-      // alert('Ошибка при отправке сообщения. Попробуйте снова.');
     } finally {
       isSending.value = false
     }
@@ -120,49 +117,41 @@ export function useChatView(props: { chatId?: string }, emit: any) {
   }
 
   async function onChatDelete(id: string) {
-    try {
-      await deleteChat(id)
-      if (id === chatId.value) {
-        chat.value = undefined
-        messages.value = []
-        chatId.value = undefined
-        emit('chatDeleted')
-        router.push('/chat')
-      }
-      await onChatUpdate()
-    } catch (error) {
-      console.error('Error deleting chat:', error)
+    await deleteChat(id)
+    if (id === chatId.value) {
+      chat.value = undefined
+      messages.value = []
+      chatId.value = undefined
+      emit('chatDeleted')
+      router.push('/chat')
     }
+    await onChatUpdate()
   }
 
   async function createNewChat() {
-    try {
-      const now = new Date()
-      const year = now.getFullYear()
-      const month = String(now.getMonth() + 1).padStart(2, '0')
-      const day = String(now.getDate()).padStart(2, '0')
-      const hours = String(now.getHours()).padStart(2, '0')
-      const minutes = String(now.getMinutes()).padStart(2, '0')
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    const hours = String(now.getHours()).padStart(2, '0')
+    const minutes = String(now.getMinutes()).padStart(2, '0')
 
-      const defaultName = `Чат ${year}-${month}-${day} ${hours}:${minutes}`
+    const defaultName = `Чат ${year}-${month}-${day} ${hours}:${minutes}`
 
-      const chatName = window.prompt('Введите название чата', defaultName)
+    const chatName = window.prompt('Введите название чата', defaultName)
 
-      if (chatName === null) {
-        // User cancelled
-        return
-      }
-
-      const dto: CreateChatDto = {
-        name: chatName || defaultName,
-        type: 'Chat'
-      }
-      const newChatId = await createChat(dto)
-      await onChatUpdate()
-      router.push(`/chat/${newChatId}`)
-    } catch (error) {
-      console.error('Error creating chat:', error)
+    if (chatName === null) {
+      // User cancelled
+      return
     }
+
+    const dto: CreateChatDto = {
+      name: chatName || defaultName,
+      type: 'Chat'
+    }
+    const newChatId = await createChat(dto)
+    await onChatUpdate()
+    router.push(`/chat/${newChatId}`)
   }
 
   async function updateTaskInfo() {
@@ -172,13 +161,9 @@ export function useChatView(props: { chatId?: string }, emit: any) {
       taskType.value = null;
       return;
     }
-    // Загружаем задачи пользователя (все типы)
-    try {
-      // Сначала проверяем тип 0
       const tasks0 = await fetchUserTasks(0);
       let task = tasks0.find(t => t.associatedChatId === chatId.value);
 
-      // Если не нашли в типе 0, проверяем типы 1-3
       if (!task) {
         for (let i = 1; i <= 3; i++) {
           const tasksI = await fetchUserTasks(i);
@@ -201,9 +186,6 @@ export function useChatView(props: { chatId?: string }, emit: any) {
         taskStatus.value = null;
         taskType.value = null;
       }
-    } catch (err) {
-      console.error('Failed to fetch user tasks for chat view:', err);
-    }
   }
 
   async function markTaskSolved() {
@@ -220,8 +202,6 @@ export function useChatView(props: { chatId?: string }, emit: any) {
           router.push('/select-task');
         }
       }
-    } catch (error) {
-      console.error('Error marking task as solved:', error);
     } finally {
       markingSolved.value = false;
     }

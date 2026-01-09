@@ -1,6 +1,7 @@
 /**
  * Configuration for external services used by the application
  * Uses relative paths that work with both dev (Vite proxy) and production (nginx)
+ * or absolute URLs when service is hosted on a separate domain
  */
 
 export interface ServicesConfig {
@@ -9,17 +10,18 @@ export interface ServicesConfig {
 }
 
 /**
- * Default service configuration
- * Uses relative paths that will be proxied in dev and handled by nginx in production
+ * Service configuration
+ * Reads from VITE_VIDEO_SERVICE_URL environment variable if set,
+ * otherwise falls back to relative path '/video' for backward compatibility
  */
 export const servicesConfig: ServicesConfig = {
-  videoServiceUrl: '/video'
+  videoServiceUrl: import.meta.env.VITE_VIDEO_SERVICE_URL || '/video'
 }
 
 /**
  * Helper function to construct video URL from filename
  * @param filename - Video filename (e.g., "03.mp4")
- * @returns Relative URL to the VideoApp page with the video loaded
+ * @returns URL to the VideoApp page with the video loaded (relative or absolute depending on config)
  */
 export function getVideoUrl(filename: string): string {
   if (!filename) return ''
@@ -32,9 +34,12 @@ export function getVideoUrl(filename: string): string {
   // Remove leading slash if present
   const cleanFilename = filename.startsWith('/') ? filename.slice(1) : filename
   
-  // Construct relative URL to VideoApp page with video loaded
+  // Normalize base URL - remove trailing slash if present to avoid double slashes
+  const baseUrl = servicesConfig.videoServiceUrl.replace(/\/$/, '')
+  
+  // Construct URL to VideoApp page with video loaded
   // This opens the full VideoApp interface with chat, subtitles, etc.
-  return `${servicesConfig.videoServiceUrl}/${cleanFilename}`
+  return `${baseUrl}/${cleanFilename}`
 }
 
 /**

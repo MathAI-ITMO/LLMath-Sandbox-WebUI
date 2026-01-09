@@ -26,8 +26,7 @@ export function useChat() {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
         return
       }
-      console.error('Failed to delete chat:', error)
-      throw new Error('Failed to delete chat. Please try again.')
+      throw error
     }
   }
 
