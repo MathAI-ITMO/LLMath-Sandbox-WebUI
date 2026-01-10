@@ -85,7 +85,7 @@
                   :headers="tableHeaders"
                   :items="paginatedProblems"
                   :loading="loading"
-                  item-value="_id"
+                  :item-value="(item: any) => item.id || item._id"
                   class="elevation-0"
                   hide-default-footer>
                   <template v-slot:item.type="{ item }">
@@ -231,16 +231,18 @@
             </v-text-field>
 
             <!-- Тип -->
-            <v-combobox
+            <v-select
               v-model="managementNewProblemType"
-              :items="allTypes"
+              :items="taskTypeOptions"
+              item-title="title"
+              item-value="value"
               label="Тип задачи"
-              placeholder="Выберите или введите тип"
+              placeholder="Выберите тип"
               variant="outlined"
               class="mb-4"
-              hint="Необязательное поле. Можно выбрать из списка или ввести новый тип"
+              hint="Необязательное поле. Выберите тип задачи из списка"
               persistent-hint>
-            </v-combobox>
+            </v-select>
 
             <!-- Видео теории -->
             <v-select
@@ -371,16 +373,18 @@
             </v-text-field>
 
             <!-- Тип -->
-            <v-combobox
+            <v-select
               v-model="currentEditProblemType"
-              :items="allTypes"
+              :items="taskTypeOptions"
+              item-title="title"
+              item-value="value"
               label="Тип задачи"
-              placeholder="Выберите или введите тип"
+              placeholder="Выберите тип"
               variant="outlined"
               class="mb-4"
-              hint="Необязательное поле. Можно выбрать из списка или ввести новый тип"
+              hint="Необязательное поле. Выберите тип задачи из списка"
               persistent-hint>
-            </v-combobox>
+            </v-select>
 
             <!-- Видео теории -->
             <v-select
@@ -586,6 +590,15 @@ import { useToast } from '@/composables/useToast';
 import { useModal } from '@/composables/useModal';
 import { useVideoManagement } from '@/composables/useVideoManagement';
 import { usePagination } from '@/composables/usePagination';
+import { TaskType } from '@/types/BackendDtos';
+
+// Task type options for dropdown
+const taskTypeOptions = [
+  { title: 'Default', value: String(TaskType.Default) },
+  { title: 'Learning', value: String(TaskType.Learning) },
+  { title: 'Guided', value: String(TaskType.Guided) },
+  { title: 'Exam', value: String(TaskType.Exam) },
+];
 
 // Composables
 const { 
@@ -596,14 +609,13 @@ const {
   problemTypesMap,
   apiCallLoading, 
   apiResponse, 
-  allTypes, 
   fetchAllProblems, 
-  fetchAllTypes, 
   getProblemAssignedTypes, 
   deleteProblemByIdAndRefresh,
   createProblem: createProblemApi,
   updateProblem: updateProblemApi,
-  tryParseJson
+  tryParseJson,
+  taskTypeToString
 } = useProblemManagement();
 
 const { 
@@ -678,9 +690,6 @@ const tableHeaders = [
 watch(activeTab, (newTab) => {
   if (newTab === 'management' && problems.value.length === 0 && !loading.value && !attemptedLoad.value) {
     fetchAllProblems();
-  }
-  if (newTab === 'management' && allTypes.value.length === 0 && !apiCallLoading.fetchAllTypes) {
-    fetchAllTypes();
   }
   if (newTab === 'database') {
     editingProblem.value = null;

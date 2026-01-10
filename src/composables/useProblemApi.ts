@@ -1,6 +1,7 @@
 import { reactive, ref } from 'vue';
+import type { TaskType, CreateProblemRequestDto, UpdateProblemRequestDto } from '@/types/BackendDtos';
 
-export const LLMATH_PROBLEMS_API_URL = '/problems/api';
+export const LLMATH_PROBLEMS_API_URL = '/app';
 
 export interface GeoilonAnsKey {
   hash: string;
@@ -19,20 +20,19 @@ export interface Solution {
 }
 
 export interface Problem {
-  _id?: string;
   id?: string;
   title?: string;
   statement: string;
-  geolin_ans_key: GeoilonAnsKey;
+  geolinHash?: string;
+  geolinSeed?: number;
+  geolin_ans_key?: GeoilonAnsKey; // Legacy field for backward compatibility
   result?: string;
-  solution: Solution;
-  llm_solution?: any;
-  theory_link?: string;
-}
-
-export interface ProblemWithTypePayload {
-  type_name: string;
-  problem_id: string;
+  solution?: Solution; // May not be present in backend response
+  llmSolution?: string;
+  llm_solution?: any; // Legacy field for backward compatibility
+  theoryLink?: string;
+  theory_link?: string; // Legacy field for backward compatibility
+  types?: TaskType[]; // Array of task types assigned to this problem
 }
 
 export interface GeolinProblemData {
@@ -50,9 +50,7 @@ export function useProblemApi() {
     fetchProblemById: false,
     updateProblem: false,
     deleteProblem: false,
-    assignType: false,
     fetchProblemsByType: false,
-    fetchAllTypes: false,
     loadProblemForUpdate: false,
     managementAddProblem: false,
     managementUpdateProblem: false,
@@ -66,16 +64,12 @@ export function useProblemApi() {
     fetchProblemById: null,
     updateProblem: null,
     deleteProblem: null,
-    assignType: null,
     fetchProblemsByType: null,
-    fetchAllTypesError: null,
     managementAddProblem: null,
     managementUpdateProblem: null,
     loadFromGeolin: null,
     checkSolution: null,
   });
-
-  const allTypes = ref<string[]>([]);
 
   async function makeApiCall(
     endpoint: string,
@@ -86,9 +80,6 @@ export function useProblemApi() {
   ) {
     if (loadingKey) apiCallLoading[loadingKey] = true;
     if (responseKey) apiResponse[responseKey] = null;
-    if (responseKey === 'fetchAllTypesError' || loadingKey === 'fetchAllTypes') {
-      apiResponse.fetchAllTypesError = null;
-    }
 
     try {
       const options: RequestInit = {
@@ -118,18 +109,14 @@ export function useProblemApi() {
         throw errorDetail;
       }
 
-      if (responseKey && responseKey !== 'fetchAllTypesError') {
+      if (responseKey) {
         apiResponse[responseKey] = responseData;
-      } else if (endpoint === '/types' && method === 'GET') {
-        allTypes.value = responseData as string[];
       }
       return responseData;
     } catch (e: any) {
       console.error(`Ошибка при вызове ${method} ${LLMATH_PROBLEMS_API_URL}${endpoint}:`, e);
-      if (responseKey && responseKey !== 'fetchAllTypesError') {
+      if (responseKey) {
         apiResponse[responseKey] = { error: true, details: e };
-      } else if (loadingKey === 'fetchAllTypes' || responseKey === 'fetchAllTypesError') {
-        apiResponse.fetchAllTypesError = { error: true, details: e };
       }
       return { error: true, details: e };
     } finally {
@@ -137,15 +124,15 @@ export function useProblemApi() {
     }
   }
 
-  async function fetchAllTypes() {
-    return makeApiCall('/types', 'GET', undefined, 'fetchAllTypes');
+  // Get problems by TaskType enum
+  async function fetchProblemsByType(type: TaskType) {
+    return makeApiCall(`/api/Problems/type/${type}`, 'GET', undefined, 'fetchProblemsByType', 'fetchProblemsByType');
   }
 
   return {
     apiCallLoading,
     apiResponse,
-    allTypes,
     makeApiCall,
-    fetchAllTypes,
+    fetchProblemsByType,
   };
 }

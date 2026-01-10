@@ -62,6 +62,14 @@ export enum UserTaskStatus {
   Attempted = 3 
 }
 
+// Соответствует enum TaskType на бэкенде
+export enum TaskType {
+  Default = 0,
+  Learning = 1,
+  Guided = 2,
+  Exam = 3
+}
+
 // Соответствует UserTaskDto на бэкенде
 export interface UserTaskDto {
   id: number;
@@ -76,4 +84,28 @@ export interface UserTaskDto {
 // Соответствует StartUserTaskRequestDto на бэкенде
 export interface StartUserTaskRequestDto {
   chatId: string; // Guid преобразуется в string
+}
+
+// --- Problem DTOs ---
+
+// Соответствует CreateProblemRequestDto на бэкенде
+export interface CreateProblemRequestDto {
+  title?: string | null;
+  statement?: string | null;
+  llmSolution?: string | null;
+  theoryLink?: string | null;
+  geolinHash?: string | null;
+  geolinSeed?: number | null;
+  types?: TaskType[] | null;
+}
+
+// Соответствует UpdateProblemRequestDto на бэкенде
+export interface UpdateProblemRequestDto {
+  title?: string | null;
+  statement?: string | null;
+  llmSolution?: string | null;
+  theoryLink?: string | null;
+  geolinHash?: string | null;
+  geolinSeed?: number | null;
+  types?: TaskType[] | null;
 }

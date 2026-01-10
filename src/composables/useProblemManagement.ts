@@ -1,14 +1,15 @@
 import { ref, reactive } from 'vue';
-import { useProblemApi, type Problem, type ProblemWithTypePayload, LLMATH_PROBLEMS_API_URL } from './useProblemApi';
+import { useProblemApi, type Problem, LLMATH_PROBLEMS_API_URL } from './useProblemApi';
+import type { TaskType, CreateProblemRequestDto, UpdateProblemRequestDto } from '@/types/BackendDtos';
 
 export function useProblemManagement() {
-  const { makeApiCall, apiCallLoading, apiResponse, allTypes, fetchAllTypes } = useProblemApi();
+  const { makeApiCall, apiCallLoading, apiResponse } = useProblemApi();
 
   const problems = ref<Problem[]>([]);
   const loading = ref(false);
   const error = ref<any>(null);
   const attemptedLoad = ref(false);
-  const problemTypesMap = ref<Record<string, string[]>>({});
+  const problemTypesMap = ref<Record<string, TaskType[]>>({});
 
   function tryParseJson(jsonString: string, defaultValue: any = null) {
     if (!jsonString || jsonString.trim() === '') return defaultValue;
@@ -20,26 +21,40 @@ export function useProblemManagement() {
     }
   }
 
-  async function populateProblemTypesMap() {
-    if (allTypes.value.length === 0) {
-      await fetchAllTypes();
+  // Helper function to convert string type to TaskType enum
+  function stringToTaskType(typeStr: string): TaskType | null {
+    const normalized = typeStr.trim().toLowerCase();
+    switch (normalized) {
+      case '0':
+      case 'default':
+        return TaskType.Default;
+      case '1':
+      case 'learning':
+        return TaskType.Learning;
+      case '2':
+      case 'guided':
+        return TaskType.Guided;
+      case '3':
+      case 'exam':
+        return TaskType.Exam;
+      default:
+        return null;
     }
+  }
 
-    if (allTypes.value.length > 0 && !apiResponse.fetchAllTypesError) {
-      const tempMap: Record<string, string[]> = {};
-      for (const typeStr of allTypes.value) {
-        const problemsForTypeResponse = await makeApiCall(`/get_problems_by_type?problem_type=${encodeURIComponent(typeStr)}`, 'GET');
-        if (problemsForTypeResponse && !problemsForTypeResponse.error && Array.isArray(problemsForTypeResponse)) {
-          for (const problem of problemsForTypeResponse as Problem[]) {
-            const problemId = problem._id || problem.id;
-            if (problemId) {
-              if (!tempMap[problemId]) tempMap[problemId] = [];
-              if (!tempMap[problemId].includes(typeStr)) tempMap[problemId].push(typeStr);
-            }
-          }
-        }
-      }
-      problemTypesMap.value = tempMap;
+  // Helper function to convert TaskType enum to display string
+  function taskTypeToString(type: TaskType): string {
+    switch (type) {
+      case TaskType.Default:
+        return 'Default';
+      case TaskType.Learning:
+        return 'Learning';
+      case TaskType.Guided:
+        return 'Guided';
+      case TaskType.Exam:
+        return 'Exam';
+      default:
+        return String(type);
     }
   }
 
@@ -48,17 +63,21 @@ export function useProblemManagement() {
     error.value = null;
     attemptedLoad.value = true;
     try {
-      const data = await makeApiCall('/problems', 'GET');
+      const data = await makeApiCall('/api/Problems', 'GET');
       if (data && data.error) {
         throw new Error(data.message || 'Error fetching problems');
       }
-      problems.value = data || [];
-      await fetchAllTypes();
-      if (problems.value.length > 0) {
-        await populateProblemTypesMap();
-      } else {
-        problemTypesMap.value = {};
+      problems.value = (Array.isArray(data) ? data : []) || [];
+      
+      // Populate types map from problems
+      const tempMap: Record<string, TaskType[]> = {};
+      for (const problem of problems.value) {
+        const problemId = problem.id || (problem as any)._id; // Support legacy _id field
+        if (problemId && problem.types && Array.isArray(problem.types)) {
+          tempMap[problemId] = problem.types;
+        }
       }
+      problemTypesMap.value = tempMap;
     } catch (e: any) {
       console.error('Error fetching all problems:', e);
       error.value = e;
@@ -69,7 +88,9 @@ export function useProblemManagement() {
 
   function getProblemAssignedTypes(problemId: string | undefined): string {
     if (!problemId) return '';
-    return problemTypesMap.value[problemId]?.join(', ') || '';
+    const types = problemTypesMap.value[problemId];
+    if (!types || types.length === 0) return '';
+    return types.map(taskTypeToString).join(', ');
   }
 
   async function deleteProblemByIdAndRefresh(id: string | undefined) {
@@ -78,7 +99,7 @@ export function useProblemManagement() {
       apiResponse.deleteProblem = { error: true, message: "ID для удаления не предоставлен" };
       return;
     }
-    const result = await makeApiCall(`/problems/${id}`, 'DELETE', undefined, 'deleteProblem', 'deleteProblem');
+    const result = await makeApiCall(`/api/Problems/${id}`, 'DELETE', undefined, 'deleteProblem', 'deleteProblem');
     if (result && !result.error) {
       await fetchAllProblems();
     }
@@ -95,46 +116,38 @@ export function useProblemManagement() {
   }) {
     apiResponse.managementAddProblem = null;
     try {
-      const steps = JSON.parse(problemData.solutionStepsJson || '[]');
-      const llmSolution = tryParseJson(problemData.llmSolutionJson, null);
+      const llmSolution = typeof problemData.llmSolutionJson === 'string' 
+        ? (tryParseJson(problemData.llmSolutionJson, problemData.llmSolutionJson))
+        : problemData.llmSolutionJson;
+      
+      // Convert llmSolution to string if it's an object
+      const llmSolutionString = typeof llmSolution === 'string' 
+        ? llmSolution 
+        : (llmSolution ? JSON.stringify(llmSolution) : null);
 
-      const problemToCreatePayload: Omit<Problem, '_id' | 'id' | 'result'> = {
-        title: problemData.title,
-        statement: problemData.statement,
-        geolin_ans_key: {
-          hash: problemData.geolin_ans_key.hash,
-          seed: Number(problemData.geolin_ans_key.seed) || 0,
-        },
-        solution: { steps },
-        llm_solution: llmSolution,
-        theory_link: problemData.theory_link || '',
+      // Convert type string to TaskType array
+      const types: TaskType[] = [];
+      if (problemData.type && problemData.type.trim() !== '') {
+        const taskType = stringToTaskType(problemData.type);
+        if (taskType !== null) {
+          types.push(taskType);
+        }
+      }
+
+      const createPayload: CreateProblemRequestDto = {
+        title: problemData.title || null,
+        statement: problemData.statement || null,
+        llmSolution: llmSolutionString || null,
+        theoryLink: problemData.theory_link || null,
+        geolinHash: problemData.geolin_ans_key?.hash || null,
+        geolinSeed: problemData.geolin_ans_key?.seed ? Number(problemData.geolin_ans_key.seed) : null,
+        types: types.length > 0 ? types : null,
       };
 
-      const createdProblemResponse = await makeApiCall('/problems', 'POST', problemToCreatePayload, 'managementAddProblem', 'managementAddProblem');
+      const createdProblemResponse = await makeApiCall('/api/Problems', 'POST', createPayload, 'managementAddProblem', 'managementAddProblem');
 
-      if (createdProblemResponse && !createdProblemResponse.error && (createdProblemResponse._id || createdProblemResponse.id)) {
-        const newProblemId = createdProblemResponse._id || createdProblemResponse.id;
+      if (createdProblemResponse && !createdProblemResponse.error && (createdProblemResponse.id || (createdProblemResponse as any)._id)) {
         apiResponse.managementAddProblem = { success: true, createdProblem: createdProblemResponse };
-
-        if (problemData.type && problemData.type.trim() !== '') {
-          const typePayload: ProblemWithTypePayload = {
-            problem_id: newProblemId,
-            type_name: problemData.type.trim(),
-          };
-          const assignTypeResponse = await makeApiCall('/assign_type', 'POST', typePayload, 'assignType', 'assignType');
-          if (assignTypeResponse && !assignTypeResponse.error) {
-            console.log("Тип успешно присвоен:", assignTypeResponse);
-            if (typeof apiResponse.managementAddProblem === 'object' && apiResponse.managementAddProblem !== null) {
-              apiResponse.managementAddProblem.typeAssignment = assignTypeResponse;
-            }
-          } else {
-            console.warn("Ошибка при присвоении типа:", assignTypeResponse?.details || 'Неизвестная ошибка');
-            if (typeof apiResponse.managementAddProblem === 'object' && apiResponse.managementAddProblem !== null) {
-              apiResponse.managementAddProblem.typeAssignmentError = assignTypeResponse?.details || 'Неизвестная ошибка при присвоении типа';
-            }
-          }
-        }
-
         await fetchAllProblems();
         return { success: true, createdProblem: createdProblemResponse };
       } else {
@@ -163,33 +176,37 @@ export function useProblemManagement() {
     }
 
     try {
-      const steps = JSON.parse(problemData.solutionStepsJson || '[]');
-      const llmSolution = tryParseJson(problemData.llmSolutionJson, null);
+      const llmSolution = typeof problemData.llmSolutionJson === 'string' 
+        ? (tryParseJson(problemData.llmSolutionJson, problemData.llmSolutionJson))
+        : problemData.llmSolutionJson;
+      
+      // Convert llmSolution to string if it's an object
+      const llmSolutionString = typeof llmSolution === 'string' 
+        ? llmSolution 
+        : (llmSolution ? JSON.stringify(llmSolution) : null);
 
-      const payload: Partial<Problem> = {
-        title: problemData.title,
-        statement: problemData.statement,
-        solution: { steps },
-        llm_solution: llmSolution,
-        theory_link: problemData.theory_link || '',
-        geolin_ans_key: problemData.geolin_ans_key
+      // Convert type string to TaskType array
+      const types: TaskType[] = [];
+      if (problemData.type && problemData.type.trim() !== '') {
+        const taskType = stringToTaskType(problemData.type);
+        if (taskType !== null) {
+          types.push(taskType);
+        }
+      }
+
+      const updatePayload: UpdateProblemRequestDto = {
+        title: problemData.title || null,
+        statement: problemData.statement || null,
+        llmSolution: llmSolutionString || null,
+        theoryLink: problemData.theory_link || null,
+        geolinHash: problemData.geolin_ans_key?.hash || null,
+        geolinSeed: problemData.geolin_ans_key?.seed ? Number(problemData.geolin_ans_key.seed) : null,
+        types: types.length > 0 ? types : null,
       };
 
-      const updateResponse = await makeApiCall(`/problems/${problemId}`, 'PUT', payload, 'managementUpdateProblem', 'managementUpdateProblem');
+      const updateResponse = await makeApiCall(`/api/Problems/${problemId}`, 'PUT', updatePayload, 'managementUpdateProblem', 'managementUpdateProblem');
 
       if (updateResponse && !updateResponse.error) {
-        // Обновление типа задачи, если он изменился
-        const oldAssignedTypes = problemTypesMap.value[problemId] || [];
-        const oldType = oldAssignedTypes.length > 0 ? oldAssignedTypes[0] : '';
-        const newType = problemData.type?.trim() || '';
-
-        if (newType !== oldType && problemId) {
-          if (newType) {
-            const typePayload: ProblemWithTypePayload = { problem_id: problemId, type_name: newType };
-            await makeApiCall('/assign_type', 'POST', typePayload, 'assignType', 'assignType');
-          }
-        }
-
         await fetchAllProblems();
         return { success: true };
       } else {
@@ -210,14 +227,13 @@ export function useProblemManagement() {
     problemTypesMap,
     apiCallLoading,
     apiResponse,
-    allTypes,
     fetchAllProblems,
-    fetchAllTypes,
     getProblemAssignedTypes,
     deleteProblemByIdAndRefresh,
     createProblem,
     updateProblem,
     makeApiCall,
     tryParseJson,
+    taskTypeToString,
   };
 }
