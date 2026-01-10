@@ -79,66 +79,12 @@ export function useChat() {
     )
   }
 
-  async function getProblems(page: number, prefix?: string): Promise<ProblemsResponseDto> {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      size: '10'
-    });
-    if (prefix) {
-      params.append('prefix', prefix);
-    }
-    const resp = await client.get<ProblemsResponseDto>(`/api/Tasks/problems?${params.toString()}`);
-    return resp.data;
-  }
-
-  async function getProblemByPrefix(prefix: string): Promise<ProblemDto | null> {
-    const resp = await client.get<ProblemsResponseDto>(`/api/Tasks/problems?page=1&size=10&prefixName=${encodeURIComponent(prefix)}`);
-    return resp.data.problems.length > 0 ? resp.data.problems[0] : null;
-  }
-
-  async function getAllProblemsByPrefix(prefix: string): Promise<ProblemDto[]> {
-    const allProblems: ProblemDto[] = [];
-    let page = 1;
-    const size = 50; // Берем по 50 задач на странице для оптимизации
-
-    while (true) {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        size: size.toString()
-      });
-
-      if (prefix) {
-        params.append('prefixName', prefix);
-      }
-
-      const resp = await client.get<ProblemsResponseDto>(`/api/Tasks/problems?${params.toString()}`);
-      const problems = resp.data.problems;
-
-      if (problems.length === 0) {
-        break; // Если задач больше нет, выходим из цикла
-      }
-
-      allProblems.push(...problems);
-
-      if (problems.length < size) {
-        break; // Если получили меньше задач, чем размер страницы, значит это последняя страница
-      }
-
-      page++; // Переходим к следующей странице
-    }
-
-    return allProblems;
-  }
-
   return {
     createChat,
     deleteChat,
     getChats,
     getChatById,
     getNextMessage,
-    getChatMessages,
-    getProblems,
-    getProblemByPrefix,
-    getAllProblemsByPrefix,
+    getChatMessages
   }
 }

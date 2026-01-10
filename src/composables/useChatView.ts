@@ -11,7 +11,7 @@ export function useChatView(props: { chatId?: string }, emit: any) {
   const route = useRoute()
   const router = useRouter()
 
-  const { getChatById, getChatMessages, getNextMessage, createChat, getChats, deleteChat, getProblems } = useChat()
+  const { getChatById, getChatMessages, getNextMessage, createChat, getChats, deleteChat } = useChat()
   const { completeUserTask, fetchUserTasks } = useUserTasks()
 
   const chatId = ref<string | undefined>(props.chatId)

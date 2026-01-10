@@ -28,9 +28,9 @@ export function useGeolinProxy() {
 
     loading.value = true;
     response.loadFromGeolin = null;
-    
+
     try {
-      const url = `${MATHLLM_BACKEND_API_URL}/api/v1/geolin-proxy/problem-data?prefix=${encodeURIComponent(prefix)}`;
+      const url = `${MATHLLM_BACKEND_API_URL}/api/tasks/problems?prefix=${encodeURIComponent(prefix)}`
       const fetchResponse = await fetch(url, {
         credentials: 'include'
       });
@@ -112,7 +112,7 @@ export function useGeolinProxy() {
       return checkResult;
     } catch (error) {
       console.error('❌ Ошибка при проверке решения:', error);
-      
+
       if (axios.isAxiosError(error)) {
         console.error('📋 Детали ошибки axios:', {
           status: error.response?.status,
@@ -129,7 +129,7 @@ export function useGeolinProxy() {
       } else if (error instanceof Error) {
         errorMessage = error.message;
       }
-      
+
       throw new Error(`Ошибка при проверке решения: ${errorMessage}`);
     } finally {
       loading.value = false;
