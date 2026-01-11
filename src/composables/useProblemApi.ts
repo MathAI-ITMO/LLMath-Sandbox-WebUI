@@ -115,10 +115,11 @@ export function useProblemApi() {
       return responseData;
     } catch (e: any) {
       console.error(`Ошибка при вызове ${method} ${LLMATH_PROBLEMS_API_URL}${endpoint}:`, e);
+      const errorMsg = e.message || e.error || e;
       if (responseKey) {
-        apiResponse[responseKey] = { error: true, details: e };
+        apiResponse[responseKey] = { error: true, message: errorMsg };
       }
-      return { error: true, details: e };
+      return { error: true, message: errorMsg };
     } finally {
       if (loadingKey) apiCallLoading[loadingKey] = false;
     }

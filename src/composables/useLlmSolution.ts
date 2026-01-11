@@ -27,20 +27,16 @@ export function useLlmSolution() {
         problemDescription: problemStatement
       });
 
-      return response.data.solution;
-    } catch (error) {
-      console.error('Ошибка при получении решения от LLM:', error);
-      
-      let errorMessage = 'Неизвестная ошибка';
-      if (axios.isAxiosError(error)) {
-        errorMessage = error.response?.status === 401
-          ? 'Ошибка авторизации. Возможно, вам нужно выполнить вход в систему.'
-          : `Ошибка: ${error.response?.status || 'сетевая ошибка'} - ${error.response?.data || error.message}`;
-      } else if (error instanceof Error) {
-        errorMessage = error.message;
+      if (response.data && response.data.error) {
+        throw new Error(response.data.error);
       }
-      
-      throw new Error(`Ошибка при получении решения от LLM: ${errorMessage}`);
+
+      return response.data.solution;
+    } catch (error: any) {
+      console.error('Ошибка при получении решения от LLM:', error);
+      const data = error.response?.data;
+      const errorMessage = data?.error || data?.message || data || error.message || error;
+      throw new Error(errorMessage);
     } finally {
       loading.value = false;
     }

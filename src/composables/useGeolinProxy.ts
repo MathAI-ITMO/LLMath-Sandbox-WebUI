@@ -30,16 +30,17 @@ export function useGeolinProxy() {
     response.loadFromGeolin = null;
 
     try {
-      const url = `${MATHLLM_BACKEND_API_URL}/api/tasks/problems?prefix=${encodeURIComponent(prefix)}`
+      const url = `${MATHLLM_BACKEND_API_URL}/api/tasks/problem/${encodeURIComponent(prefix)}`
       const fetchResponse = await fetch(url, {
         credentials: 'include'
       });
       const data = await fetchResponse.json();
+      console.log("Response from GeoLin API:", data);
 
       if (!fetchResponse.ok) {
-        const errorMsg = data.error || `HTTP error! status: ${fetchResponse.status}`;
+        const errorMsg = data.error || data.message || `HTTP error! status: ${fetchResponse.status}`;
         console.error("Ошибка от GeoLin API:", data);
-        throw new Error(typeof errorMsg === 'object' ? JSON.stringify(errorMsg) : errorMsg);
+        throw new Error(typeof errorMsg === 'object' ? JSON.stringify(errorMsg) : String(errorMsg));
       }
 
       response.loadFromGeolin = data;
@@ -60,10 +61,6 @@ export function useGeolinProxy() {
 
     if (!solution) {
       throw new Error('Поле "Решение LLM" не может быть пустым для проверки');
-    }
-
-    if (!hash) {
-      throw new Error('Hash задачи отсутствует. Невозможно проверить решение.');
     }
 
     loading.value = true;
@@ -90,7 +87,6 @@ export function useGeolinProxy() {
         throw new Error('LLM не смог извлечь ответ из решения - получен пустой ответ');
       }
 
-      // Шаг 2: Проверяем извлеченный ответ через GeoLin
       const checkRequestData = {
         hash: hash,
         answerAttempt: extractedAnswer,
@@ -110,27 +106,11 @@ export function useGeolinProxy() {
       checkResultModal.seed = seed;
 
       return checkResult;
-    } catch (error) {
-      console.error('❌ Ошибка при проверке решения:', error);
-
-      if (axios.isAxiosError(error)) {
-        console.error('📋 Детали ошибки axios:', {
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          data: error.response?.data,
-        });
-      }
-
-      let errorMessage = 'Неизвестная ошибка';
-      if (axios.isAxiosError(error)) {
-        errorMessage = error.response?.status === 401
-          ? 'Ошибка авторизации. Возможно, вам нужно выполнить вход в систему.'
-          : `Ошибка: ${error.response?.status || 'сетевая ошибка'} - ${JSON.stringify(error.response?.data) || error.message}`;
-      } else if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-
-      throw new Error(`Ошибка при проверке решения: ${errorMessage}`);
+    } catch (error: any) {
+      console.error('Ошибка при проверке решения:', error);
+      const data = error.response?.data;
+      const errorMessage = data?.error || data?.message || data || error.message || error;
+      throw new Error(errorMessage);
     } finally {
       loading.value = false;
     }

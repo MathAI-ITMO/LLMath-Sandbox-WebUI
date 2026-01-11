@@ -21,8 +21,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      problems:
-        condition: service_started
       geolin:
         condition: service_started
 
@@ -41,30 +39,6 @@ services:
       timeout: 5s
       retries: 5
     command: ["postgres", "-c", "log_statement=all", "-c", "log_destination=stderr"]
-  mongo:
-    image: mongo:latest
-    restart: always
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: mongoadmin
-      MONGO_INITDB_ROOT_PASSWORD: mongoadmin
-    ports:
-      - 27017:27017
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  problems:
-    image: ghcr.io/mathai-itmo/llmath-problems:latest
-    restart: always
-    environment:
-      - CONNECTION_STRING=mongodb://mongoadmin:mongoadmin@mongo:27017/?authSource=admin
-    ports:
-      - 8000:8000
-    depends_on:
-      mongo:
-        condition: service_healthy
 
   geolin:
     image: ghcr.io/mathdepitmo/geolin-milestones:latest
@@ -131,24 +105,5 @@ services:
       speaches:
         condition: service_started
 
-#  # Поднимаю ollama в compose чтобы проще было без bridge сети, если есть жедлание поднять со своей, то нужно изобретать мосты
-#  ollama:
-#    image: ollama/ollama:latest
-#    restart: always
-#    ports:
-#      - 11434:11434
-#    volumes:
-#      - ollama_data:/root/.ollama
-#
-#  ollama-pull-model:
-#    image: ollama/ollama:latest
-#    container_name: ollama-pull-model
-#    volumes:
-#      - ollama_data:/root/.ollama
-#    entrypoint: /bin/sh
-#    command: "-c 'sleep 5; ollama serve & sleep 5; ollama pull tinyllama; pkill ollama'"
-#
-#volumes:
-#  ollama_data:
 volumes:
   hf-hub-cache:

@@ -236,11 +236,12 @@
               :items="taskTypeOptions"
               item-title="title"
               item-value="value"
-              label="Тип задачи"
+              label="Тип задачи *"
               placeholder="Выберите тип"
               variant="outlined"
               class="mb-4"
-              hint="Необязательное поле. Выберите тип задачи из списка"
+              required
+              hint="Выберите тип задачи из списка (обязательно)"
               persistent-hint>
             </v-select>
 
@@ -322,18 +323,6 @@
               </div>
               <div class="text-caption text-grey">Эти данные заполняются автоматически при импорте из GeoLin</div>
             </v-card>
-
-            <!-- Решение (шаги) - неактивное -->
-            <v-textarea
-              v-model="managementNewProblemSolutionStepsJson"
-              label="Решение (шаги, JSON) - в разработке"
-              placeholder="Функционал в разработке"
-              variant="outlined"
-              disabled
-              rows="3"
-              hint="Эта функция будет доступна в будущих версиях"
-              persistent-hint>
-            </v-textarea>
           </v-form>
         </v-card-text>
 
@@ -344,7 +333,7 @@
             color="primary"
             variant="flat"
             @click="handleCreateProblem"
-            :disabled="!managementNewProblem.statement || !managementNewProblem.title || apiCallLoading.managementAddProblem"
+            :disabled="!managementNewProblem.statement || !managementNewProblem.title || !managementNewProblemType || apiCallLoading.managementAddProblem"
             :loading="apiCallLoading.managementAddProblem">
             Создать задачу
           </v-btn>
@@ -378,11 +367,12 @@
               :items="taskTypeOptions"
               item-title="title"
               item-value="value"
-              label="Тип задачи"
+              label="Тип задачи *"
               placeholder="Выберите тип"
               variant="outlined"
               class="mb-4"
-              hint="Необязательное поле. Выберите тип задачи из списка"
+              required
+              hint="Выберите тип задачи из списка (обязательно)"
               persistent-hint>
             </v-select>
 
@@ -464,18 +454,6 @@
               </div>
               <div class="text-caption text-grey">GeoLin данные нельзя изменить после создания</div>
             </v-card>
-
-            <!-- Решение (шаги) - неактивное -->
-            <v-textarea
-              v-model="currentEditProblemSolutionStepsJson"
-              label="Решение (шаги, JSON) - в разработке"
-              placeholder="Функционал в разработке"
-              variant="outlined"
-              disabled
-              rows="3"
-              hint="Эта функция будет доступна в будущих версиях"
-              persistent-hint>
-            </v-textarea>
           </v-form>
         </v-card-text>
 
@@ -486,7 +464,7 @@
             color="primary"
             variant="flat"
             @click="handleUpdateProblem"
-            :disabled="!currentEditProblem.statement || !currentEditProblem.title || apiCallLoading.managementUpdateProblem"
+            :disabled="!currentEditProblem.statement || !currentEditProblem.title || !currentEditProblemType || apiCallLoading.managementUpdateProblem"
             :loading="apiCallLoading.managementUpdateProblem">
             Сохранить изменения
           </v-btn>
@@ -635,13 +613,11 @@ const {
 
 const {
   managementNewProblem,
-  managementNewProblemSolutionStepsJson,
   managementNewProblemLlmSolutionJson,
   managementNewProblemType,
   editingProblem,
   currentEditProblem,
   currentEditProblemType,
-  currentEditProblemSolutionStepsJson,
   currentEditProblemLlmSolutionJson,
   resetCreateForm,
   resetEditForm,
@@ -791,11 +767,15 @@ async function handleUpdateProblem() {
     return;
   }
 
+  if (!currentEditProblemType.value) {
+    showError('Пожалуйста, выберите тип задачи');
+    return;
+  }
+
   const result = await updateProblemApi(problemId, {
     title: currentEditProblem.title,
     statement: currentEditProblem.statement,
     geolin_ans_key: editingProblem.value.geolin_ans_key,
-    solutionStepsJson: currentEditProblemSolutionStepsJson.value,
     llmSolutionJson: currentEditProblemLlmSolutionJson.value,
     theory_link: currentEditProblem.theory_link,
     type: currentEditProblemType.value,
@@ -836,11 +816,15 @@ function closeCreateModal() {
 }
 
 async function handleCreateProblem() {
+  if (!managementNewProblemType.value) {
+    showError('Пожалуйста, выберите тип задачи');
+    return;
+  }
+
   const result = await createProblemApi({
     title: managementNewProblem.title,
     statement: managementNewProblem.statement,
     geolin_ans_key: managementNewProblem.geolin_ans_key,
-    solutionStepsJson: managementNewProblemSolutionStepsJson.value,
     llmSolutionJson: managementNewProblemLlmSolutionJson.value,
     theory_link: managementNewProblem.theory_link,
     type: managementNewProblemType.value,

@@ -1,6 +1,6 @@
 import { ref, reactive } from 'vue';
 import { useProblemApi, type Problem, LLMATH_PROBLEMS_API_URL } from './useProblemApi';
-import type { TaskType, CreateProblemRequestDto, UpdateProblemRequestDto } from '@/types/BackendDtos';
+import { TaskType, type CreateProblemRequestDto, type UpdateProblemRequestDto } from '@/types/BackendDtos';
 
 export function useProblemManagement() {
   const { makeApiCall, apiCallLoading, apiResponse } = useProblemApi();
@@ -109,7 +109,6 @@ export function useProblemManagement() {
     title: string;
     statement: string;
     geolin_ans_key: { hash: string; seed: number };
-    solutionStepsJson: string;
     llmSolutionJson: string;
     theory_link?: string;
     type?: string;
@@ -155,8 +154,8 @@ export function useProblemManagement() {
         return { error: true, details: createdProblemResponse?.details };
       }
     } catch (e: any) {
-      console.error("Ошибка парсинга JSON или другая ошибка при добавлении задачи (management tab):", e);
-      apiResponse.managementAddProblem = { error: true, message: "Ошибка парсинга JSON или API (management tab)", details: e };
+      console.error("Ошибка при добавлении задачи (management tab):", e);
+      apiResponse.managementAddProblem = { error: true, message: e.message || "Ошибка при добавлении задачи", details: e };
       return { error: true, details: e };
     }
   }
@@ -165,7 +164,6 @@ export function useProblemManagement() {
     title: string;
     statement: string;
     geolin_ans_key: { hash: string; seed: number };
-    solutionStepsJson: string;
     llmSolutionJson: string;
     theory_link?: string;
     type?: string;
@@ -212,9 +210,9 @@ export function useProblemManagement() {
       } else {
         return { error: true, details: updateResponse?.details };
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Ошибка при обновлении задачи (management tab):", e);
-      apiResponse.managementUpdateProblem = { error: true, message: "Ошибка парсинга JSON или API (management tab)", details: e };
+      apiResponse.managementUpdateProblem = { error: true, message: e.message || "Ошибка при обновлении задачи", details: e };
       return { error: true, details: e };
     }
   }

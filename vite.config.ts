@@ -41,23 +41,11 @@ export default defineConfig(({ mode }): UserConfig => {
       strictPort: true,
       proxy: {
         '/app': {
-          target: 'http://localhost:8002',
+          target: 'http://localhost:5000',
           changeOrigin: true,
           secure: false,
           rewrite: (path) => path.replace(/^\/app/, ''),
-        },
-        '/video': {
-          target: 'http://localhost:5001',
-          changeOrigin: true,
-          secure: false,
-          rewrite: (path) => path.replace(/^\/video/, ''),
-        },
-        '/problems': {
-          target: 'http://localhost:8000',
-          changeOrigin: true,
-          secure: false,
-          rewrite: (path) => path.replace(/^\/problems/, ''),
-        },
+        }
       },
     },
     preview: {
