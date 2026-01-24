@@ -81,8 +81,6 @@ services:
   video:
     image: ghcr.io/mathai-itmo/llmath-video:latest
     restart: always
-    env_file:
-      - .env
     environment:
 
       VIDEOAPP_OPENAI_API_KEY: ollama

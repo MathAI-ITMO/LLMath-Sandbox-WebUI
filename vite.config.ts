@@ -41,7 +41,7 @@ export default defineConfig(({ mode }): UserConfig => {
       strictPort: true,
       proxy: {
         '/app': {
-          target: 'http://localhost:5000',
+          target: 'http://localhost:8002',
           changeOrigin: true,
           secure: false,
           rewrite: (path) => path.replace(/^\/app/, ''),
