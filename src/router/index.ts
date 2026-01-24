@@ -4,15 +4,16 @@ import AuthView from '@/views/AuthView.vue'
 import ChatView from '@/views/ChatView.vue'
 import Logout from '@/views/Logout.vue'
 import TaskSelectionView from '@/views/TaskSelectionView.vue'
-import TestLLMathProblemsView from '@/views/TestLLMathProblemsView.vue'
-import StatisticsView from '@/views/StatisticsView.vue'
 import UserDetailView from '@/views/UserDetailView.vue'
 import AdminChatView from '@/views/AdminChatView.vue'
 import VideoAppView from '@/views/VideoAppView.vue'
+import AdminView from '@/views/AdminView.vue'
 import { useAuth } from '@/composables/useAuth'
+import { USER_ROLES } from '@/config/roles.constants'
+import { getBaseUrl } from '@/config/runtime.config'
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(getBaseUrl() || import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
@@ -37,9 +38,10 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/admin-chat/:chatId',
+      path: '/admin/chat/:chatId',
       name: 'admin-chat',
       component: AdminChatView,
+      meta: { requiresAdmin: true },
     },
     {
       path: '/select-task',
@@ -48,19 +50,28 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/llmath-problems',
-      name: 'llmath-problems',
-      component: TestLLMathProblemsView,
+      path: '/admin',
+      name: 'admin',
+      component: AdminView,
+      meta: { requiresAdmin: true },
     },
     {
-      path: '/statistics',
+      path: '/admin/statistics',
       name: 'statistics',
-      component: StatisticsView,
+      component: AdminView,
+      meta: { requiresAdmin: true },
     },
     {
-      path: '/statistics/:userId',
+      path: '/admin/llmath-problems',
+      name: 'llmath-problems',
+      component: AdminView,
+      meta: { requiresAdmin: true },
+    },
+    {
+      path: '/admin/statistics/:userId',
       name: 'user-details',
       component: UserDetailView,
+      meta: { requiresAdmin: true },
     },
     {
       path: '/video-app',
@@ -72,18 +83,22 @@ const router = createRouter({
 
 const { isAuthenticated, fetchCurrentUser } = useAuth();
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _from, next) => {
+  if (to.meta.requiresAdmin) {
+    const user = await fetchCurrentUser();
+    if (!user) {
+      return next({ name: 'home' });
+    }
+    if (user.role !== USER_ROLES.ADMIN) {
+      return next({ name: 'home' });
+    }
+    return next();
+  }
+
   if (to.meta.requiresAuth) {
-    if (isAuthenticated.value) {
-      try {
-        const user = await fetchCurrentUser();
-        if (user) {
-          return next();
-        }
-        return next();
-      } catch {
-        return next();
-      }
+    const user = await fetchCurrentUser();
+    if (user) {
+      return next();
     } else {
       return next({ name: 'home' });
     }

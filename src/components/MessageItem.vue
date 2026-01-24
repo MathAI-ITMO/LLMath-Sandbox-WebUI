@@ -9,6 +9,10 @@ import moment from 'moment'
 import { renderMessage } from '@/utils/renderMessage'
 import type { Message } from '@/models/Message'
 
+defineOptions({
+  name: 'MessageItem'
+})
+
 const props = defineProps<{ message: Message }>()
 
 const html   = computed(() => renderMessage(props.message.text))
@@ -101,4 +105,4 @@ const classes = computed(() => ({
 :deep(.katex .base) {
   display: inline-block;
 }
-</style> 
+</style>

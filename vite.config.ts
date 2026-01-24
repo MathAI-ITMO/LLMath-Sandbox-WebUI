@@ -40,12 +40,12 @@ export default defineConfig(({ mode }): UserConfig => {
       port: 8080,
       strictPort: true,
       proxy: {
-        '/api-dotnet': {
-          target: 'http://localhost:5000',
+        '/app': {
+          target: 'http://localhost:8002',
           changeOrigin: true,
           secure: false,
-          rewrite: (path) => path.replace(/^\/api-dotnet/, ''),
-        },
+          rewrite: (path) => path.replace(/^\/app/, ''),
+        }
       },
     },
     preview: {

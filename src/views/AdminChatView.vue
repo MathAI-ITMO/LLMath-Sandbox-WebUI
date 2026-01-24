@@ -12,7 +12,7 @@
           <v-chip v-else-if="chat?.type" size="small" class="ml-2" color="primary" label>{{ chat.type }}</v-chip>
         </v-toolbar-title>
       </v-toolbar>
-      
+
       <div ref="messagesCard" class="messages-container">
         <div class="messages-list">
           <template v-if="messages.length === 0">
@@ -22,9 +22,9 @@
               </div>
             </div>
           </template>
-          
+
           <!-- Используем MessageItem компонент вместо прямого вывода -->
-          <MessageItem
+          <message-item
             v-for="message in messages"
             :key="message.id"
             :message="message"
@@ -36,88 +36,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import moment from 'moment';
-import { useChat } from '@/composables/useChat';
-import MessageItem from '@/components/MessageItem.vue';
-import type { Chat } from '@/models/Chat';
-import type { Message } from '@/models/Message';
-import axios from 'axios';
+import { useAdminChat } from '@/composables/useAdminChat';
+import MessageItem from '../components/MessageItem.vue';
 import 'katex/dist/katex.min.css';
 
-const route = useRoute();
-const router = useRouter();
-const { getChatById, getChatMessages } = useChat();
-
-const chatId = ref<string | undefined>();
-const chat = ref<Chat>();
-const messages = ref<Message[]>([]);
-const messagesCard = ref<HTMLElement | null>(null);
-const taskModeTitles = ref<Record<string, string>>({});
-const taskModeTitlesReady = ref(false);
-
-onMounted(async () => {
-  // Загрузка названий типов задач
-  try {
-    const baseUrl = import.meta.env.VITE_MATHLLM_BACKEND_ADDRESS;
-    const titlesResponse = await axios.get<Record<string, string>>(`${baseUrl}/api/stats/task-mode-titles`, { withCredentials: true });
-    taskModeTitles.value = titlesResponse.data;
-    taskModeTitlesReady.value = true;
-    console.log('AdminChatView: Loaded task mode titles:', taskModeTitles.value);
-  } catch (e) {
-    console.error('AdminChatView: Failed to load task mode titles:', e);
-  }
-
-  chatId.value = route.params.chatId as string;
-  if (chatId.value) {
-    await loadChatData();
-  }
-});
-
-watch(() => route.params.chatId, async (newChatId) => {
-  chatId.value = newChatId as string;
-  if (chatId.value) {
-    await loadChatData();
-  }
-});
-
-async function loadChatData() {
-  if (!chatId.value) return;
-  
-  try {
-    const receivedChat = await getChatById(chatId.value);
-    chat.value = receivedChat;
-    console.log('Loaded chat details:', receivedChat);
-    
-    const receivedMessages = await getChatMessages(chatId.value);
-    messages.value = receivedMessages;
-    
-    scrollToBottom();
-  } catch (error) {
-    console.error('Error loading chat data:', error);
-  }
-}
-
-function scrollToBottom() {
-  setTimeout(() => {
-    window.scrollTo(0, document.body.scrollHeight);
-  }, 100);
-}
-
-function goBack() {
-  router.go(-1);
-}
-
-const formatTaskTypeForChat = (type: number | undefined): string => {
-  if (type === undefined) return 'Тип задачи не определен';
-  const typeStr = type.toString();
-  if (taskModeTitles.value && taskModeTitles.value[typeStr]) {
-    return taskModeTitles.value[typeStr];
-  }
-  if (type === 0) return 'Упражнение (из списка)';
-  return `Тип задачи (${type})`;
-};
+const {
+  chat,
+  messages,
+  messagesCard,
+  taskModeTitlesReady,
+  formatTaskTypeForChat,
+  goBack
+} = useAdminChat();
 </script>
 
 <style scoped>
@@ -228,4 +158,4 @@ const formatTaskTypeForChat = (type: number | undefined): string => {
 :deep(.katex .base) {
   display: inline-block;
 }
-</style> 
+</style>

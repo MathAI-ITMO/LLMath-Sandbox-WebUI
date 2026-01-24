@@ -1,8 +1,9 @@
 import { ref, shallowRef } from 'vue';
 import Cookies from 'js-cookie';
-import axios, { type AxiosInstance, AxiosError } from 'axios';
+import axios, { AxiosError } from 'axios';
 import type { LoginRequestDto, RegisterRequestDto } from '@/types/BackendDtos';
 import type { UserModel } from '@/types/Models';
+import { createBackendApiClient } from '@/utils/apiClient';
 
 interface RegisterErrorResponse {
   type: string;
@@ -16,26 +17,18 @@ interface RegisterErrorResponse {
   [key: string]: any;
 }
 
-const baseUrl = import.meta.env.VITE_MATHLLM_BACKEND_ADDRESS;
-
-// Проверяем состояние аутентификации не только по кукам, но и по localStorage
 const checkAuthState = () => {
   const hasCookie = !!Cookies.get('.AspNetCore.Identity.Application');
   const hasLocalStorage = localStorage.getItem('llmath_auth') === 'true';
   
-  // Возвращаем true, если есть хотя бы один из признаков аутентификации
   return hasCookie || hasLocalStorage;
 };
 
-// Create a reactive auth state
 const isAuthenticatedState = ref(checkAuthState());
 const currentUser = shallowRef<UserModel | null>(null);
 
 export function useAuth() {
-  const client: AxiosInstance = axios.create({
-    baseURL: baseUrl,
-    withCredentials: true // Важно для отправки cookies с запросами
-  });
+  const client = createBackendApiClient();
 
   async function login(email: string, password: string): Promise<void> {
     const dto: LoginRequestDto = { email, password };
@@ -65,57 +58,18 @@ export function useAuth() {
       await login(email, password);
       return { success: true };
     } catch (error) {
+      console.error('Ошибка регистрации:', error);
+      
       if (axios.isAxiosError(error)) {
         const axiosError = error as AxiosError<RegisterErrorResponse>;
-        console.log('Ошибка регистрации:', axiosError.response?.data);
-        
         if (axiosError.response?.data) {
-          const errorData = axiosError.response.data;
-          
-          // Проверяем наличие конкретной ошибки о дубликате email
-          if (typeof errorData === 'object') {
-            // Проверяем все возможные форматы ошибок
-            if (errorData.errors) {
-              // Проверяем ошибки в формате ModelState
-              const allErrorMessages = Object.values(errorData.errors).flat();
-              const hasEmailDuplicate = allErrorMessages.some(
-                (msg: string) => 
-                  msg.includes('уже существует') || 
-                  msg.includes('already exists') ||
-                  msg.includes('DuplicateEmail') ||
-                  msg.includes('DuplicateUserName')
-              );
-              
-              if (hasEmailDuplicate) {
-                return {
-                  success: false,
-                  error: {
-                    ...errorData,
-                    detail: "Пользователь с таким email уже существует"
-                  }
-                };
-              }
-            } else if (errorData.detail && (
-                errorData.detail.includes('уже существует') || 
-                errorData.detail.includes('already exists')
-              )) {
-              // Ошибка уже содержит правильное сообщение
-              return {
-                success: false,
-                error: errorData
-              };
-            }
-            
-            // Если дошли сюда, просто возвращаем данные ошибки как есть
           return {
             success: false,
-              error: errorData
+            error: axiosError.response.data
           };
         }
       }
-      }
       
-      console.error('Непредвиденная ошибка при регистрации:', error);
       return { 
         success: false, 
         error: { 
