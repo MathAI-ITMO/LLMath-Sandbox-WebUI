@@ -1,8 +1,9 @@
 import { ref, shallowRef } from 'vue';
 import Cookies from 'js-cookie';
-import axios, { type AxiosInstance, AxiosError } from 'axios';
+import axios, { AxiosError } from 'axios';
 import type { LoginRequestDto, RegisterRequestDto } from '@/types/BackendDtos';
 import type { UserModel } from '@/types/Models';
+import { createBackendApiClient } from '@/utils/apiClient';
 
 interface RegisterErrorResponse {
   type: string;
@@ -27,10 +28,7 @@ const isAuthenticatedState = ref(checkAuthState());
 const currentUser = shallowRef<UserModel | null>(null);
 
 export function useAuth() {
-  const client: AxiosInstance = axios.create({
-    baseURL: '/app',
-    withCredentials: true // Важно для отправки cookies с запросами
-  });
+  const client = createBackendApiClient();
 
   async function login(email: string, password: string): Promise<void> {
     const dto: LoginRequestDto = { email, password };

@@ -1,7 +1,5 @@
 import { ref } from 'vue';
-import axios from 'axios';
-
-const MATHLLM_BACKEND_API_URL = '/app';
+import { createBackendApiClient } from '@/utils/apiClient';
 
 export function useLlmSolution() {
   const loading = ref(false);
@@ -15,13 +13,7 @@ export function useLlmSolution() {
     loading.value = true;
 
     try {
-      const client = axios.create({
-        baseURL: MATHLLM_BACKEND_API_URL,
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      const client = createBackendApiClient();
 
       const response = await client.post('/api/v1/llm/solve-problem', {
         problemDescription: problemStatement

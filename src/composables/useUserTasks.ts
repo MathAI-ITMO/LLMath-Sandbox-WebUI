@@ -1,10 +1,8 @@
-import axios, { type AxiosInstance } from 'axios';
 import type { UserTaskDto, StartUserTaskRequestDto } from '@/types/BackendDtos';
+import { createBackendApiClient } from '@/utils/apiClient';
 
 export function useUserTasks() {
-  const client: AxiosInstance = axios.create({
-    baseURL: '/app',
-  });
+  const client = createBackendApiClient();
 
   async function fetchUserTasks(taskType: number): Promise<UserTaskDto[]> {
     const response = await client.get<UserTaskDto[]>('/api/usertasks', {

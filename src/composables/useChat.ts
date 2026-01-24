@@ -1,17 +1,15 @@
-import axios, { type AxiosInstance } from 'axios'
+import axios from 'axios'
 import type { Chat } from '@/models/Chat'
 import type { Message } from '@/models/Message'
 import type { ChatDto, CreateChatDto, MessageDto, SendMessageRequestDto, ProblemsResponseDto, ProblemDto } from '@/types/BackendDtos'
+import { createBackendApiClient } from '@/utils/apiClient'
 
 interface Stream<T> {
   [Symbol.asyncIterator](): AsyncIterator<T>;
 }
 
 export function useChat() {
-  const client: AxiosInstance = axios.create({
-    baseURL: '/app',
-    withCredentials: true,
-  })
+  const client = createBackendApiClient()
 
   async function createChat(dto: CreateChatDto): Promise<string> {
     console.log(dto)

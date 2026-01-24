@@ -1,9 +1,18 @@
 /// <reference types="vite/client" />
 
-interface ImportMetaEnv {
-  readonly VITE_VIDEO_SERVICE_URL?: string
+
+interface AppConfig {
+  baseUrl: string
+  services: {
+    videoServiceUrl: string
+  }
+  features: Record<string, boolean | string | number>
+  meta: {
+    version: string
+    environment: string
+  }
 }
 
-interface ImportMeta {
-  readonly env: ImportMetaEnv
+interface Window {
+  APP_CONFIG?: AppConfig
 }

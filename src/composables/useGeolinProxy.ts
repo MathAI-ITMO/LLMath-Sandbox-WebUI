@@ -1,8 +1,6 @@
 import { ref, reactive } from 'vue';
-import axios from 'axios';
+import { createBackendApiClient } from '@/utils/apiClient';
 import { type GeolinProblemData } from './useProblemApi';
-
-const MATHLLM_BACKEND_API_URL = '/app';
 
 export function useGeolinProxy() {
   const loading = ref(false);
@@ -30,7 +28,7 @@ export function useGeolinProxy() {
     response.loadFromGeolin = null;
 
     try {
-      const url = `${MATHLLM_BACKEND_API_URL}/api/tasks/problem/${encodeURIComponent(prefix)}`
+      const url = `/app/api/tasks/problem/${encodeURIComponent(prefix)}`
       const fetchResponse = await fetch(url, {
         credentials: 'include'
       });
@@ -66,13 +64,7 @@ export function useGeolinProxy() {
     loading.value = true;
 
     try {
-      const client = axios.create({
-        baseURL: MATHLLM_BACKEND_API_URL,
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      const client = createBackendApiClient();
 
       // Шаг 1: Извлекаем ответ из решения с помощью LLM
       const extractRequestData = {

@@ -1,5 +1,5 @@
 import { ref, onMounted, computed } from 'vue';
-import axios from 'axios';
+import { backendApi } from '@/utils/apiClient';
 
 export interface UserStats {
   userId: string;
@@ -30,7 +30,7 @@ export function useUserStats() {
     loading.value = true;
     error.value = null;
     try {
-      const response = await axios.get<UserStats[]>('/app/api/stats/user-stats', { withCredentials: true });
+      const response = await backendApi.get<UserStats[]>('/api/stats/user-stats');
       const data = response.data;
       stats.value = Array.isArray(data) ? data : [];
     } catch (e: any) {

@@ -1,7 +1,9 @@
+import { getRuntimeConfig } from './runtime.config'
+
 /**
  * Configuration for external services used by the application
- * Uses relative paths that work with both dev (Vite proxy) and production (nginx)
- * or absolute URLs when service is hosted on a separate domain
+ * Uses runtime configuration loaded from /config.js
+ * This allows configuration changes without rebuilding the application
  */
 
 export interface ServicesConfig {
@@ -11,11 +13,14 @@ export interface ServicesConfig {
 
 /**
  * Service configuration
- * Reads from VITE_VIDEO_SERVICE_URL environment variable if set,
- * otherwise falls back to relative path '/video' for backward compatibility
+ * Reads from runtime config (window.APP_CONFIG) loaded from /config.js
+ * 
+ * Note: All backend API requests go through /app path
+ * - In development: Vite proxies /app to localhost:5000
+ * - In production: nginx proxies /app to the backend service
  */
 export const servicesConfig: ServicesConfig = {
-  videoServiceUrl: import.meta.env.VITE_VIDEO_SERVICE_URL || '/video'
+  videoServiceUrl: getRuntimeConfig().services.videoServiceUrl || '/video'
 }
 
 /**

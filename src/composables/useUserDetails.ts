@@ -1,5 +1,5 @@
 import { ref, onMounted } from 'vue';
-import axios from 'axios';
+import { backendApi } from '@/utils/apiClient';
 
 export interface TaskItemDto {
   UserTaskId: string;
@@ -40,13 +40,13 @@ export function useUserDetails(userId: string) {
   const taskModeTitles = ref<Record<string, string>>({});
 
   async function fetchTaskModeTitles() {
-    const titlesResponse = await axios.get<Record<string, string>>('/app/api/stats/task-mode-titles', { withCredentials: true });
+    const titlesResponse = await backendApi.get<Record<string, string>>('/api/stats/task-mode-titles');
     taskModeTitles.value = titlesResponse.data;
   }
 
   async function fetchUserInfo() {
     try {
-      const statsResp = await axios.get('/app/api/stats/user-stats', { withCredentials: true });
+      const statsResp = await backendApi.get('/api/stats/user-stats');
       const userDataFromStats = statsResp.data.find((user: any) => user.userId === userId);
 
       if (userDataFromStats) {
@@ -69,7 +69,7 @@ export function useUserDetails(userId: string) {
     loading.value = true;
     error.value = null;
     try {
-      const resp = await axios.get<UserDetailDto>(`/app/api/stats/user-details/${userId}`, { withCredentials: true });
+      const resp = await backendApi.get<UserDetailDto>(`/api/stats/user-details/${userId}`);
       details.value = resp.data;
     } catch (e: any) {
       console.error('Error fetching user details:', e);

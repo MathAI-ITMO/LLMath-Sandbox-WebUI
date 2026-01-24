@@ -3,7 +3,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useChat } from '@/composables/useChat';
 import type { Chat } from '@/models/Chat';
 import type { Message } from '@/models/Message';
-import axios from 'axios';
+import { backendApi } from '@/utils/apiClient';
 
 export function useAdminChat() {
   const route = useRoute();
@@ -51,7 +51,7 @@ export function useAdminChat() {
   };
 
   onMounted(async () => {
-    const titlesResponse = await axios.get<Record<string, string>>('/app/api/stats/task-mode-titles', { withCredentials: true });
+    const titlesResponse = await backendApi.get<Record<string, string>>('/api/stats/task-mode-titles');
     taskModeTitles.value = titlesResponse.data;
     taskModeTitlesReady.value = true;
     console.log('AdminChatView: Loaded task mode titles:', taskModeTitles.value);

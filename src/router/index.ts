@@ -10,9 +10,10 @@ import VideoAppView from '@/views/VideoAppView.vue'
 import AdminView from '@/views/AdminView.vue'
 import { useAuth } from '@/composables/useAuth'
 import { USER_ROLES } from '@/config/roles.constants'
+import { getBaseUrl } from '@/config/runtime.config'
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(getBaseUrl() || import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
