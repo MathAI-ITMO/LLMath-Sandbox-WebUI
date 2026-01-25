@@ -100,14 +100,18 @@ export function useProblemForm() {
     
     // Hash handling
     const hash = data.hash || data.geolinHash || (data.geolin_ans_key?.hash);
-    managementNewProblem.geolin_ans_key.hash = hash || '';
+    if (managementNewProblem.geolin_ans_key) {
+      managementNewProblem.geolin_ans_key.hash = hash || '';
+    }
 
     // Seed handling
     const seed = data.seed !== undefined ? data.seed : (data.geolinSeed !== undefined ? data.geolinSeed : (data.geolin_ans_key?.seed));
-    if (seed !== undefined && seed !== null) {
-      managementNewProblem.geolin_ans_key.seed = Number(seed);
-    } else {
-      managementNewProblem.geolin_ans_key.seed = 0;
+    if (managementNewProblem.geolin_ans_key) {
+      if (seed !== undefined && seed !== null) {
+        managementNewProblem.geolin_ans_key.seed = Number(seed);
+      } else {
+        managementNewProblem.geolin_ans_key.seed = 0;
+      }
     }
 
     // Clear solution fields

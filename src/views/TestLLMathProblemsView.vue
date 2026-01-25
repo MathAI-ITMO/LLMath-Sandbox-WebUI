@@ -90,11 +90,11 @@
                   hide-default-footer>
                   <template v-slot:item.type="{ item }">
                     <v-chip
-                      v-if="getProblemAssignedTypes(item._id || item.id)"
+                      v-if="getProblemAssignedTypes(item.id)"
                       color="primary"
                       size="small"
                       variant="flat">
-                      {{ getProblemAssignedTypes(item._id || item.id) }}
+                      {{ getProblemAssignedTypes(item.id) }}
                     </v-chip>
                     <span v-else class="text-grey">Без типа</span>
                   </template>
@@ -122,7 +122,7 @@
                         size="small"
                         color="error"
                         variant="text"
-                        @click="deleteProblemByIdAndRefresh(item._id || item.id)"
+                        @click="deleteProblemByIdAndRefresh(item.id)"
                         :disabled="apiCallLoading.deleteProblem"
                         title="Удалить">
                       </v-btn>
@@ -157,7 +157,7 @@
         </v-card-title>
 
         <v-card-text>
-          <v-text-field
+          <v-combobox
             v-model="geolinPrefixToLoad"
             label="Префикс GeoLin *"
             placeholder="tasks.linalg.linear_operators..."
@@ -166,18 +166,7 @@
             class="mb-4"
             hint="Выберите префикс из списка или введите свой"
             persistent-hint>
-            <template v-slot:menu>
-              <v-list>
-                <v-list-item
-                  v-for="prefix in availableGeolinPrefixes"
-                  :key="prefix"
-                  :value="prefix"
-                  @click="geolinPrefixToLoad = prefix">
-                  {{ prefix }}
-                </v-list-item>
-              </v-list>
-            </template>
-          </v-text-field>
+          </v-combobox>
 
           <v-progress-circular
             v-if="geolinLoading"
@@ -290,7 +279,7 @@
                     prepend-icon="mdi-check"
                     variant="outlined"
                     @click.prevent="checkSolution('management')"
-                    :disabled="geolinLoading || !managementNewProblem.statement || !managementNewProblemLlmSolutionJson || !managementNewProblem.geolin_ans_key.hash">
+                    :disabled="geolinLoading || !managementNewProblem.statement || !managementNewProblemLlmSolutionJson || !managementNewProblem.geolin_ans_key?.hash">
                     Проверить решение
                   </v-btn>
                 </div>
@@ -314,11 +303,11 @@
               <div class="d-flex gap-4 mb-2">
                 <div>
                   <span class="text-caption text-grey">GeoLin Hash:</span>
-                  <div class="text-body-2 font-weight-medium">{{ managementNewProblem.geolin_ans_key.hash || 'не указан' }}</div>
+                  <div class="text-body-2 font-weight-medium">{{ managementNewProblem.geolin_ans_key?.hash || 'не указан' }}</div>
                 </div>
                 <div>
                   <span class="text-caption text-grey">GeoLin Seed:</span>
-                  <div class="text-body-2 font-weight-medium">{{ managementNewProblem.geolin_ans_key.seed || 0 }}</div>
+                  <div class="text-body-2 font-weight-medium">{{ managementNewProblem.geolin_ans_key?.seed || 0 }}</div>
                 </div>
               </div>
               <div class="text-caption text-grey">Эти данные заполняются автоматически при импорте из GeoLin</div>
@@ -657,10 +646,10 @@ const availableGeolinPrefixes = ref<string[]>([
 
 // Table headers for v-data-table
 const tableHeaders = [
-  { title: 'Тип задачи', key: 'type', width: '150px', align: 'start' },
-  { title: 'Название', key: 'title', width: '200px', align: 'start' },
-  { title: 'Условие (фрагмент)', key: 'statement', align: 'start' },
-  { title: 'Действия', key: 'actions', width: '180px', align: 'center', sortable: false },
+  { title: 'Тип задачи', key: 'type', width: '150px', align: 'start' as const },
+  { title: 'Название', key: 'title', width: '200px', align: 'start' as const },
+  { title: 'Условие (фрагмент)', key: 'statement', align: 'start' as const },
+  { title: 'Действия', key: 'actions', width: '180px', align: 'center' as const, sortable: false },
 ];
 
 watch(activeTab, (newTab) => {
@@ -756,12 +745,12 @@ function closeEditModal() {
 }
 
 async function handleUpdateProblem() {
-  if (!editingProblem.value || !(editingProblem.value._id || editingProblem.value.id)) {
+  if (!editingProblem.value || !editingProblem.value.id) {
     showError('ID редактируемой задачи не найден');
     return;
   }
 
-  const problemId = editingProblem.value._id || editingProblem.value.id;
+  const problemId = editingProblem.value.id;
   if (!problemId) {
     showError('ID редактируемой задачи не найден');
     return;
@@ -773,9 +762,9 @@ async function handleUpdateProblem() {
   }
 
   const result = await updateProblemApi(problemId, {
-    title: currentEditProblem.title,
+    title: currentEditProblem.title || '',
     statement: currentEditProblem.statement,
-    geolin_ans_key: editingProblem.value.geolin_ans_key,
+    geolin_ans_key: editingProblem.value.geolin_ans_key || { hash: '', seed: 0 },
     llmSolutionJson: currentEditProblemLlmSolutionJson.value,
     theory_link: currentEditProblem.theory_link,
     type: currentEditProblemType.value,
@@ -822,9 +811,9 @@ async function handleCreateProblem() {
   }
 
   const result = await createProblemApi({
-    title: managementNewProblem.title,
+    title: managementNewProblem.title || '',
     statement: managementNewProblem.statement,
-    geolin_ans_key: managementNewProblem.geolin_ans_key,
+    geolin_ans_key: managementNewProblem.geolin_ans_key || { hash: '', seed: 0 },
     llmSolutionJson: managementNewProblemLlmSolutionJson.value,
     theory_link: managementNewProblem.theory_link,
     type: managementNewProblemType.value,
@@ -880,8 +869,8 @@ async function checkSolution(formType: 'management' | 'edit') {
   if (formType === 'management') {
     problemStatement = managementNewProblem.statement;
     solution = managementNewProblemLlmSolutionJson.value;
-    hash = managementNewProblem.geolin_ans_key.hash;
-    seed = managementNewProblem.geolin_ans_key.seed;
+    hash = managementNewProblem.geolin_ans_key?.hash || '';
+    seed = managementNewProblem.geolin_ans_key?.seed;
   } else if (formType === 'edit') {
     problemStatement = currentEditProblem.statement;
     solution = currentEditProblemLlmSolutionJson.value;
